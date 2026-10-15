@@ -1,37 +1,7 @@
 // app/admin/page.jsx
 import Link from 'next/link'
-import { ShoppingBag, Clock, CheckCircle, DollarSign } from 'lucide-react'
+import { Clock, DollarSign } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-
-async function getStats() {
-  const supabase = await createClient()
-
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('status, total, created_at')
-
-  if (!orders) return { total: 0, pending: 0, confirmed: 0, revenue: 0, recent: [] }
-
-  const pending = orders.filter((o) =>
-    ['pending_payment', 'payment_review'].includes(o.status)
-  ).length
-
-  const confirmed = orders.filter((o) =>
-    ['confirmed', 'preparing', 'ready'].includes(o.status)
-  ).length
-
-  const revenue = orders
-    .filter((o) => o.status !== 'cancelled')
-    .reduce((acc, o) => acc + Number(o.total), 0)
-
-  const { data: recent } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  return { total: orders.length, pending, confirmed, revenue, recent: recent || [] }
-}
 
 const STATUS_LABELS = {
   pending_payment: 'Pendiente de pago',
@@ -43,45 +13,122 @@ const STATUS_LABELS = {
   cancelled: 'Cancelado',
 }
 
-const glass = 'border border-white/25 bg-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,.2)]'
+// Panel de vidrio con brillo superior
+const glass =
+  'relative border border-white/20 bg-white/8 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_8px_32px_rgba(0,0,0,.25)]'
+
+async function getStats() {
+  const supabase = await createClient()
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('id, status, total, created_at')
+
+  if (!orders) return null
+
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfYesterday = new Date(startOfToday)
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1)
+  const startOfWeek = new Date(startOfToday)
+  startOfWeek.setDate(startOfWeek.getDate() - 6)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const filterByRange = (from, to) =>
+    orders.filter((o) => {
+      const d = new Date(o.created_at)
+      return d >= from && (!to || d < to)
+    })
+
+  const compute = (list) => ({
+    count: list.length,
+    revenue: list
+      .filter((o) => o.status !== 'cancelled')
+      .reduce((acc, o) => acc + Number(o.total), 0),
+  })
+
+  return {
+    today: compute(filterByRange(startOfToday)),
+    yesterday: compute(filterByRange(startOfYesterday, startOfToday)),
+    week: compute(filterByRange(startOfWeek)),
+    month: compute(filterByRange(startOfMonth)),
+    pending: orders.filter((o) =>
+      ['pending_payment', 'payment_review'].includes(o.status)
+    ).length,
+    recent: [...orders]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 6),
+  }
+}
 
 export default async function AdminDashboard() {
   const stats = await getStats()
+  if (!stats) return <p className="text-white/70">Cargando...</p>
 
-  const cards = [
-    { label: 'Pedidos totales', value: stats.total, icon: ShoppingBag },
-    { label: 'Pendientes', value: stats.pending, icon: Clock },
-    { label: 'En preparación', value: stats.confirmed, icon: CheckCircle },
-    {
-      label: 'Ingresos',
-      value: `$${stats.revenue.toLocaleString('es-AR')}`,
-      icon: DollarSign,
-    },
+  const ranges = [
+    { label: 'Hoy', data: stats.today },
+    { label: 'Ayer', data: stats.yesterday },
+    { label: 'Últimos 7 días', data: stats.week },
+    { label: 'Este mes', data: stats.month },
   ]
 
   return (
-    <div className="space-y-8 text-[#F5EDE3]">
+    <div className="space-y-8 text-[#F5EDE3] max-w-6xl">
       <div>
-        <h1 className="font-serif text-4xl text-white">Dashboard</h1>
-        <p className="text-white/65 mt-1">Resumen general de la panadería</p>
+        <h1 className="font-serif text-4xl md:text-5xl text-white">Dashboard</h1>
+        <p className="text-white/60 mt-2">Resumen general de la panadería</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((card) => {
-          const Icon = card.icon
-          return (
-            <div key={card.label} className={`${glass} p-6`}>
-              <Icon size={24} className="mb-4 text-[#E0C89A]" />
-              <p className="text-3xl font-serif text-white mb-1">{card.value}</p>
-              <p className="text-sm text-white/65">{card.label}</p>
+      {/* Alerta de pendientes */}
+      {stats.pending > 0 && (
+        <Link
+          href="/admin/pedidos"
+          className="block border border-amber-300/40 bg-gradient-to-r from-amber-400/20 to-amber-400/5 backdrop-blur-xl p-5 rounded-2xl hover:from-amber-400/30 transition-all shadow-[inset_0_1px_0_rgba(255,255,255,.15)]"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-full bg-amber-400/25 border border-amber-300/40 flex items-center justify-center shrink-0">
+              <Clock size={20} className="text-amber-100" />
             </div>
-          )
-        })}
+            <div>
+              <p className="text-amber-50 font-medium">
+                {stats.pending}{' '}
+                {stats.pending === 1 ? 'pedido pendiente' : 'pedidos pendientes'} de
+                revisar
+              </p>
+              <p className="text-amber-100/70 text-sm mt-0.5">
+                Click para ir a la lista
+              </p>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      {/* Cajas por rango */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {ranges.map((r) => (
+          <div key={r.label} className={`${glass} rounded-2xl p-5`}>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[#E0C89A] mb-4">
+              {r.label}
+            </p>
+            <p className="font-serif text-4xl text-white leading-none">
+              {r.data.count}
+            </p>
+            <p className="text-xs text-white/50 mt-1.5 mb-4">
+              {r.data.count === 1 ? 'pedido' : 'pedidos'}
+            </p>
+            <div className="flex items-center gap-1.5 text-sm text-white/80 pt-3 border-t border-white/10">
+              <DollarSign size={14} className="text-[#E0C89A]" />
+              <span className="font-medium">
+                ${r.data.revenue.toLocaleString('es-AR')}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className={`${glass} p-6`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-xl text-white">Pedidos recientes</h2>
+      {/* Últimos pedidos */}
+      <div className={`${glass} rounded-2xl overflow-hidden`}>
+        <div className="p-6 flex items-center justify-between border-b border-white/10">
+          <h2 className="font-serif text-xl text-white">Últimos pedidos</h2>
           <Link
             href="/admin/pedidos"
             className="text-sm text-[#E0C89A] hover:text-white transition"
@@ -91,30 +138,45 @@ export default async function AdminDashboard() {
         </div>
 
         {stats.recent.length === 0 ? (
-          <p className="text-white/60 text-sm py-8 text-center">
+          <p className="text-white/55 text-sm py-12 text-center">
             Todavía no hay pedidos.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-white/55 border-b border-white/15">
-                  <th className="pb-3 font-normal">Nro.</th>
-                  <th className="pb-3 font-normal">Cliente</th>
-                  <th className="pb-3 font-normal">Total</th>
-                  <th className="pb-3 font-normal">Estado</th>
+              <thead className="bg-white/5">
+                <tr className="text-left text-white/50">
+                  <th className="px-6 py-3 font-normal text-xs uppercase tracking-wider">
+                    Nro.
+                  </th>
+                  <th className="px-6 py-3 font-normal text-xs uppercase tracking-wider">
+                    Cliente
+                  </th>
+                  <th className="px-6 py-3 font-normal text-xs uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 font-normal text-xs uppercase tracking-wider">
+                    Estado
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {stats.recent.map((order) => (
-                  <tr key={order.id} className="border-b border-white/10 last:border-0">
-                    <td className="py-3 font-mono text-xs text-white/80">{order.order_number}</td>
-                    <td className="py-3 text-white/90">{order.customer_name}</td>
-                    <td className="py-3 font-semibold text-white">
+                {stats.recent.map((order, index) => (
+                  <tr
+                    key={order.id || `order-${index}`}
+                    className="border-t border-white/8 hover:bg-white/5 transition"
+                  >
+                    <td className="px-6 py-4 font-mono text-xs text-[#E0C89A]">
+                      {order.order_number}
+                    </td>
+                    <td className="px-6 py-4 text-white/90">
+                      {order.customer_name}
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-white">
                       ${Number(order.total).toLocaleString('es-AR')}
                     </td>
-                    <td className="py-3">
-                      <span className="text-xs bg-white/15 border border-white/20 px-2 py-1 rounded-full text-white/80">
+                    <td className="px-6 py-4">
+                      <span className="text-xs bg-white/10 border border-white/15 px-2.5 py-1 rounded-full text-white/75">
                         {STATUS_LABELS[order.status] || order.status}
                       </span>
                     </td>

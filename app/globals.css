@@ -58,3 +58,19 @@ h1, h2, h3, h4 {
     animation: none;
   }
 }
+@media print {
+  aside,
+  header,
+  button,
+  nav {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}

@@ -71,7 +71,7 @@ export default function Home() {
   return (
     <>
       {/* HERO — foto producto full-bleed + madera */}
-      <section className="relative min-h-[100svh] flex items-end md:items-center text-white overflow-hidden -mt-16">
+      <section className="relative min-h-[100svh] flex items-end md:items-center text-white overflow-hidden -mt-[4.25rem]">
         <Image
           src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&q=85"
           alt="Pan y facturas recién horneados"
@@ -237,20 +237,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA EVENTOS — foto de catering (distinta al footer de madera) */}
-      <section className="relative text-white overflow-hidden">
-        <Image
-          src="https://images.unsplash.com/photo-1555244162-803834f70033?w=1600&q=85"
-          alt="Catering para eventos"
-          fill
-          className="object-cover"
-          sizes="100vw"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-[#1a0806]/72"
-        />
-        <div className="relative z-10 max-w-4xl mx-auto px-4 py-20 text-center">
+      {/* CTA EVENTOS — madera */}
+      <section style={woodHorizontal} className="text-white">
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
           <h2 className="font-serif text-4xl md:text-5xl mb-5">
             Armamos el catering de tu evento
           </h2>

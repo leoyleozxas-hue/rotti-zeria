@@ -31,7 +31,7 @@ export default function ContactoPage() {
 
   return (
     <>
-      <section style={woodVertical} className="text-white -mt-16 pt-16">
+      <section style={woodVertical} className="text-white -mt-[4.25rem] pt-[4.25rem]">
         <div className="max-w-4xl mx-auto px-4 py-16 md:py-20 text-center">
           <h1 className="font-serif text-4xl md:text-5xl mb-3">Contacto</h1>
           <p className="text-white/80">Estamos para lo que necesites.</p>
