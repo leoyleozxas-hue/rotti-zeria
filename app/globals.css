@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #FAF7F2;
-  --color-beige: #F2EADF;
-  --color-wood: #4A3728;
-  --color-caramel: #6B4F3A;
-  --color-chocolate: #2C1E16;
+  --color-cream: #F5EDE3;
+  --color-beige: #EADFC8;
+  --color-wood: #3A1E14;
+  --color-caramel: #6B3A2C;
+  --color-chocolate: #2B0F0B;
   --color-gold: #C9A96E;
   --color-gold-soft: #E0C89A;
 
@@ -22,4 +22,39 @@ body {
 h1, h2, h3, h4 {
   font-family: var(--font-serif);
   font-weight: 600;
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.animate-hero-rise {
+  animation: hero-rise 0.9s ease-out both;
+}
+
+.animate-hero-zoom {
+  animation: hero-zoom 1.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-rise,
+  .animate-hero-zoom {
+    animation: none;
+  }
 }

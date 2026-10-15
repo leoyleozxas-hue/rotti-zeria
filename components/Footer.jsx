@@ -1,7 +1,14 @@
-// components/Footer.jsx
 export default function Footer() {
   return (
-    <footer className="bg-wood text-cream mt-20">
+    <footer
+      className="text-cream mt-0"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(18,4,2,.75), rgba(18,4,2,.82)), url('/images/textura-madera.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <div className="max-w-6xl mx-auto px-4 py-12 grid md:grid-cols-3 gap-8">
         <div>
           <h3 className="font-serif text-2xl mb-3">Biarritz</h3>

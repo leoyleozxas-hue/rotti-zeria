@@ -4,6 +4,21 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
 
+const woodVertical = {
+  backgroundImage:
+    "linear-gradient(rgba(18,4,2,.45), rgba(18,4,2,.65)), url('/images/textura-madera-vertical.png')",
+  backgroundSize: 'cover',
+  backgroundPosition: 'center top',
+}
+
+const woodCatalog = {
+  backgroundImage:
+    "linear-gradient(rgba(18,4,2,.62), rgba(18,4,2,.72)), url('/images/textura-madera.png')",
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundAttachment: 'fixed',
+}
+
 const CATEGORIES = [
   { value: 'Todos', label: 'Todos' },
   { value: 'Panes', label: 'Panes' },
@@ -30,14 +45,17 @@ async function ProductosGrid({ categoria }) {
   const { data: products, error } = await query
 
   if (error) {
-    return <p className="text-red-600">Error: {error.message}</p>
+    return <p className="text-red-300">Error: {error.message}</p>
   }
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="text-caramel text-lg">No hay productos en esta categoría.</p>
-        <Link href="/productos" className="text-chocolate border-b-2 border-gold pb-1 mt-4 inline-block hover:text-gold transition">
+      <div className="text-center py-16 border border-white/20 bg-white/10 backdrop-blur-md px-6">
+        <p className="text-white/80 text-lg">No hay productos en esta categoría.</p>
+        <Link
+          href="/productos"
+          className="text-[#E0C89A] border-b border-[#E0C89A] pb-1 mt-4 inline-block hover:text-white hover:border-white transition"
+        >
           Ver todo
         </Link>
       </div>
@@ -46,7 +64,7 @@ async function ProductosGrid({ categoria }) {
 
   return (
     <>
-      <p className="text-caramel text-sm mb-6">
+      <p className="text-white/70 text-sm mb-6">
         {products.length} {products.length === 1 ? 'producto' : 'productos'}
       </p>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -63,39 +81,46 @@ export default async function ProductosPage({ searchParams }) {
   const categoria = params?.categoria || 'Todos'
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-16">
-      <div className="text-center mb-10">
-        <span className="text-gold uppercase tracking-[0.3em] text-xs">Catálogo</span>
-        <h1 className="font-serif text-5xl text-chocolate mt-3 mb-3">Nuestros productos</h1>
-        <p className="text-caramel">Todo hecho a mano, todos los días</p>
-      </div>
-
-      {/* Filtros */}
-      <div className="mb-10 overflow-x-auto">
-        <div className="flex gap-2 justify-start md:justify-center pb-2 min-w-max md:min-w-0">
-          {CATEGORIES.map((cat) => {
-            const active = categoria === cat.value
-            const href = cat.value === 'Todos' ? '/productos' : `/productos?categoria=${encodeURIComponent(cat.value)}`
-            return (
-              <Link
-                key={cat.value}
-                href={href}
-                className={`px-5 py-2.5 rounded-full text-sm whitespace-nowrap transition border ${
-                  active
-                    ? 'bg-chocolate text-cream border-chocolate'
-                    : 'bg-white text-caramel border-beige hover:border-gold hover:text-chocolate'
-                }`}
-              >
-                {cat.label}
-              </Link>
-            )
-          })}
+    <>
+      <section style={woodVertical} className="text-white -mt-16 pt-16">
+        <div className="max-w-4xl mx-auto px-4 py-16 md:py-20 text-center">
+          <h1 className="font-serif text-4xl md:text-5xl mb-3">Nuestros productos</h1>
+          <p className="text-white/80">Todo hecho a mano, todos los días</p>
         </div>
-      </div>
+      </section>
 
-      <Suspense fallback={<p className="text-caramel">Cargando productos...</p>}>
-        <ProductosGrid categoria={categoria} />
-      </Suspense>
-    </main>
+      <section style={woodCatalog} className="py-14">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="mb-10 overflow-x-auto">
+            <div className="flex gap-2 justify-start md:justify-center pb-2 min-w-max md:min-w-0">
+              {CATEGORIES.map((cat) => {
+                const active = categoria === cat.value
+                const href =
+                  cat.value === 'Todos'
+                    ? '/productos'
+                    : `/productos?categoria=${encodeURIComponent(cat.value)}`
+                return (
+                  <Link
+                    key={cat.value}
+                    href={href}
+                    className={`px-5 py-2.5 rounded-full text-sm whitespace-nowrap transition border backdrop-blur-md ${
+                      active
+                        ? 'bg-white/25 text-white border-white/50'
+                        : 'bg-white/10 text-white/75 border-white/20 hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    {cat.label}
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+          <Suspense fallback={<p className="text-white/70">Cargando productos...</p>}>
+            <ProductosGrid categoria={categoria} />
+          </Suspense>
+        </div>
+      </section>
+    </>
   )
 }

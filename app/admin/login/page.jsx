@@ -1,10 +1,17 @@
-// app/admin/login/page.jsx
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Loader2, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+
+const woodBg = {
+  backgroundImage:
+    "linear-gradient(rgba(18,4,2,.55), rgba(18,4,2,.7)), url('/images/textura-madera-vertical.png')",
+  backgroundSize: 'cover',
+  backgroundPosition: 'center top',
+}
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -30,7 +37,6 @@ export default function AdminLoginPage() {
       return
     }
 
-    // Verificar rol admin
     if (data.user?.app_metadata?.role !== 'admin') {
       await supabase.auth.signOut()
       setError('No tenés permisos para acceder')
@@ -43,42 +49,49 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-beige px-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-8">
+    <main className="min-h-screen flex items-center justify-center px-4" style={woodBg}>
+      <div className="w-full max-w-md border border-white/25 bg-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,.2)] p-8 text-[#F5EDE3]">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-full bg-chocolate text-cream flex items-center justify-center mx-auto mb-4">
-            <Lock size={24} />
+          <Image
+            src="/images/logo-biarritz-blanco.png"
+            alt="Biarritz"
+            width={200}
+            height={73}
+            className="h-12 w-auto mx-auto mb-4 mix-blend-screen"
+          />
+          <div className="w-12 h-12 rounded-full border border-white/30 bg-white/10 flex items-center justify-center mx-auto mb-4">
+            <Lock size={20} />
           </div>
-          <h1 className="font-serif text-3xl text-chocolate">Panel Biarritz</h1>
-          <p className="text-caramel text-sm mt-2">Acceso restringido</p>
+          <h1 className="font-serif text-3xl text-white">Panel Biarritz</h1>
+          <p className="text-white/65 text-sm mt-2">Acceso restringido</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-caramel mb-1">Email</label>
+            <label className="block text-sm text-white/70 mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-beige focus:border-gold focus:outline-none transition"
+              className="w-full px-4 py-2.5 border border-white/25 bg-white/10 backdrop-blur-md text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none transition"
               placeholder="admin@biarritz.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-caramel mb-1">Contraseña</label>
+            <label className="block text-sm text-white/70 mb-1">Contraseña</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-beige focus:border-gold focus:outline-none transition"
+              className="w-full px-4 py-2.5 border border-white/25 bg-white/10 backdrop-blur-md text-white focus:border-white/50 focus:outline-none transition"
             />
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+            <p className="text-red-200 text-sm bg-red-500/20 border border-red-400/30 p-3">
               {error}
             </p>
           )}
@@ -86,7 +99,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-chocolate text-cream py-3.5 rounded-full hover:bg-caramel transition disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-[#F5EDE3] text-[#2b0f0b] py-3.5 rounded-full hover:bg-white transition disabled:opacity-50"
           >
             {loading ? (
               <>

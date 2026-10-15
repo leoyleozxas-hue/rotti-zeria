@@ -1,7 +1,6 @@
 // app/layout.jsx
 import { Fraunces, Inter } from 'next/font/google'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
+import StoreShell from '@/components/StoreShell'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -17,7 +16,7 @@ const inter = Inter({
 })
 
 export const metadata = {
-  title: 'Biarritz | Panadería Artesanal',
+  title: 'Biarritz | Panadería desde 1935',
   description: 'Panadería artesanal con pedidos online. Facturas, panes y delicias recién horneadas.',
 }
 
@@ -25,9 +24,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es" className={`${fraunces.variable} ${inter.variable}`}>
       <body className="font-sans bg-cream text-chocolate antialiased min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <StoreShell>{children}</StoreShell>
       </body>
     </html>
   )

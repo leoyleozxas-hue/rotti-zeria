@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { ShoppingBag, Menu, X, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cartStore'
@@ -29,10 +30,22 @@ export default function Header() {
   }, [pathname])
 
   return (
-    <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur border-b border-beige">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="font-serif text-2xl text-chocolate">
-          Biarritz
+    <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#1a0806]/50 backdrop-blur-xl supports-[backdrop-filter]:bg-[#1a0806]/40">
+      <div className="max-w-6xl mx-auto px-4 h-[4.25rem] flex items-center justify-between gap-4">
+        <Link
+          href="/"
+          className="relative shrink-0 hover:opacity-90 transition"
+          aria-label="Biarritz — Inicio"
+        >
+          {/* mix-blend-screen: el fondo negro del PNG se vuelve transparente */}
+          <Image
+            src="/images/logo-biarritz-blanco.png"
+            alt="Biarritz"
+            width={220}
+            height={80}
+            priority
+            className="h-11 sm:h-12 w-auto mix-blend-screen"
+          />
         </Link>
 
         <nav className="hidden md:flex gap-8 text-sm">
@@ -44,8 +57,8 @@ export default function Header() {
                 href={link.href}
                 className={`transition ${
                   active
-                    ? 'text-chocolate font-semibold border-b-2 border-gold pb-1'
-                    : 'text-caramel hover:text-chocolate'
+                    ? 'text-white font-semibold border-b border-[#C9A96E] pb-0.5'
+                    : 'text-white/75 hover:text-white'
                 }`}
               >
                 {link.label}
@@ -54,11 +67,10 @@ export default function Header() {
           })}
         </nav>
 
-        <div className="flex items-center gap-1">
-          {/* Favoritos */}
+        <div className="flex items-center gap-1 text-white">
           <Link
             href="/favoritos"
-            className="relative p-2 hover:text-red-400 transition"
+            className="relative p-2 hover:text-[#E0C89A] transition"
             aria-label="Favoritos"
           >
             <Heart size={22} />
@@ -69,24 +81,22 @@ export default function Header() {
             )}
           </Link>
 
-          {/* Carrito */}
           <Link
             href="/carrito"
-            className="relative p-2 hover:text-caramel transition"
+            className="relative p-2 hover:text-[#E0C89A] transition"
             aria-label="Carrito"
           >
             <ShoppingBag size={22} />
             {mounted && count > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gold text-chocolate text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-[#C9A96E] text-[#2C1E16] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {count}
               </span>
             )}
           </Link>
 
-          {/* Hamburguesa mobile */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 hover:text-caramel transition"
+            className="md:hidden p-2 hover:text-[#E0C89A] transition"
             aria-label="Menú"
           >
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
@@ -95,7 +105,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <nav className="md:hidden border-t border-beige bg-cream">
+        <nav className="md:hidden border-t border-white/10 bg-[#1a0806]/90 backdrop-blur-xl">
           <div className="px-4 py-3 flex flex-col gap-1">
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href
@@ -103,10 +113,10 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`py-3 px-2 rounded-lg transition ${
+                  className={`py-3 px-2 transition ${
                     active
-                      ? 'bg-beige text-chocolate font-semibold'
-                      : 'text-caramel hover:bg-beige'
+                      ? 'text-white font-semibold border-l-2 border-[#C9A96E] pl-3'
+                      : 'text-white/80 hover:text-white'
                   }`}
                 >
                   {link.label}
