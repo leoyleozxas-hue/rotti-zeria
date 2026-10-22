@@ -37,6 +37,7 @@ export async function POST(request) {
         delivery_type: customer.delivery_type,
         address: fullAddress,
         pickup_date: customer.pickup_date || null,
+        pickup_time: customer.pickup_time || null,
         payment_reference: customer.payment_reference || null,
         total,
         status: 'pending_payment',
@@ -47,9 +48,12 @@ export async function POST(request) {
 
     if (orderError) throw orderError
 
+    // ACÁ ESTÁ LA MAGIA: Guardamos el nombre y la foto del producto
     const orderItems = items.map((i) => ({
       order_id: order.id,
       product_id: i.product_id,
+      product_name: i.name,               // <--- Guarda el nombre
+      product_image: i.image_url || null, // <--- Guarda la foto
       quantity: i.quantity,
       unit_price: i.price,
       subtotal: i.price * i.quantity,

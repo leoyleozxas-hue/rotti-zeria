@@ -11,10 +11,14 @@ import { useEffect, useState } from 'react'
 export default function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem)
   const toggleFav = useFavoritesStore((s) => s.toggle)
-  const isFavorite = useFavoritesStore((s) => s.isFavorite(product.id))
+  const isFavorite = useFavoritesStore((s) => product ? s.isFavorite(product.id) : false)
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!product) return null
 
   const handleFavorite = (e) => {
     e.preventDefault()
@@ -22,27 +26,34 @@ export default function ProductCard({ product }) {
     toggleFav(product)
   }
 
+  const heartClass =
+    mounted && isFavorite
+      ? 'fill-red-500 text-red-500'
+      : 'text-gray-400 group-hover:text-red-400'
+
   return (
     <Link
       href={`/productos/${product.id}`}
-      className="group relative flex flex-col overflow-hidden border border-white/30 bg-white/20 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all duration-300 hover:bg-white/30 hover:border-white/45"
+      className="group relative flex flex-col bg-[#FCFAF8] rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-[#EADFC8] hover:border-[#C9A96E]"
     >
+      {/* Etiqueta "Más vendido" (Simulada para las facturas) */}
+      {product.category === 'Facturas' && (
+        <div className="absolute top-4 left-4 z-10 bg-[#C9A96E] text-[#2b0f0b] text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+          Más vendido
+        </div>
+      )}
+
+      {/* Corazón */}
       <button
         onClick={handleFavorite}
-        className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full border border-white/30 bg-white/25 backdrop-blur-md flex items-center justify-center hover:scale-110 transition"
+        className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:scale-110 transition"
         aria-label="Favorito"
       >
-        <Heart
-          size={18}
-          className={`transition ${
-            mounted && isFavorite
-              ? 'fill-red-500 text-red-500'
-              : 'text-white/70 group-hover:text-red-300'
-          }`}
-        />
+        <Heart size={18} className={`transition ${heartClass}`} />
       </button>
 
-      <div className="relative aspect-square overflow-hidden bg-[#2b0f0b]/20">
+      {/* Imagen */}
+      <div className="relative aspect-square overflow-hidden bg-gray-100">
         {product.image_url ? (
           <Image
             src={product.image_url}
@@ -52,24 +63,26 @@ export default function ProductCard({ product }) {
             sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/40">
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
             Sin imagen
           </div>
         )}
       </div>
 
-      <div className="p-5 flex flex-col flex-1 text-[#F5EDE3]">
-        <span className="text-xs uppercase tracking-wider text-[#E0C89A] mb-1">
+      {/* Info */}
+      <div className="p-5 flex flex-col flex-1">
+        <span className="text-[10px] uppercase tracking-wider text-[#9a8b7a] mb-1 font-semibold">
           {product.category}
         </span>
-        <h3 className="font-serif text-lg text-white mb-2 leading-tight">
+        <h3 className="font-serif text-lg text-[#2B0F0B] mb-2 leading-tight group-hover:text-[#5a1a10] transition font-semibold">
           {product.name}
         </h3>
-        <p className="text-sm text-white/70 mb-4 line-clamp-2 flex-1">
+        <p className="text-sm text-gray-500 mb-4 line-clamp-2 flex-1">
           {product.description}
         </p>
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-serif text-xl text-white">
+        
+        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+          <span className="font-serif text-xl text-[#2B0F0B] font-bold">
             ${Number(product.price).toLocaleString('es-AR')}
           </span>
           <button
@@ -78,7 +91,7 @@ export default function ProductCard({ product }) {
               e.stopPropagation()
               addItem(product)
             }}
-            className="flex items-center gap-1 border border-white/35 bg-white/15 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm hover:bg-white/25 transition active:scale-95"
+            className="flex items-center gap-1 bg-[#2B0F0B] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-[#5a1a10] transition active:scale-95 shadow-md"
           >
             <Plus size={16} />
             Agregar

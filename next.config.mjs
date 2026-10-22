@@ -1,3 +1,4 @@
+// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -7,8 +8,15 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lqjeijiqwevvaircywdl.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+        search: '',
+      },
     ],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

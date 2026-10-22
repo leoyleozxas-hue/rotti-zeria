@@ -25,49 +25,47 @@ export default function AddToCartSection({ product }) {
     router.push('/carrito')
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Selector de cantidad */}
+    return (
+    <div className="space-y-6">
+      {/* Selector de cantidad (estilo minimalista) */}
       <div className="flex items-center gap-4">
-        <span className="text-sm text-caramel">Cantidad:</span>
-        <div className="flex items-center gap-2 bg-white border border-beige rounded-full p-1">
+        <span className="text-sm font-medium text-[#2B0F0B]">Cantidad</span>
+        <div className="flex items-center border border-[#EADFC8] bg-white">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-9 h-9 rounded-full hover:bg-beige flex items-center justify-center transition"
-            aria-label="Restar"
+            className="w-10 h-10 hover:bg-[#FAF7F2] flex items-center justify-center transition"
           >
             <Minus size={14} />
           </button>
-          <span className="w-8 text-center font-bold">{quantity}</span>
+          <span className="w-12 text-center font-semibold text-[#2B0F0B]">{quantity}</span>
           <button
             onClick={() => setQuantity(quantity + 1)}
-            className="w-9 h-9 rounded-full hover:bg-beige flex items-center justify-center transition"
-            aria-label="Sumar"
+            className="w-10 h-10 hover:bg-[#FAF7F2] flex items-center justify-center transition"
           >
             <Plus size={14} />
           </button>
         </div>
       </div>
 
-      {/* Botones */}
+      {/* Botones de acción */}
       <div className="flex gap-3">
         <button
           onClick={handleAdd}
-          className="flex-1 flex items-center justify-center gap-2 bg-chocolate text-cream py-4 rounded-full hover:bg-caramel transition active:scale-[0.98]"
+          className="flex-1 flex items-center justify-center gap-2 bg-[#2B0F0B] text-white py-4 font-medium hover:bg-black transition"
         >
           <ShoppingBag size={18} />
-          Agregar al carrito
+          Añadir al pedido
         </button>
 
         <button
           onClick={() => toggleFav(product)}
-          className="w-14 h-14 rounded-full border border-beige bg-white hover:border-red-300 flex items-center justify-center transition"
+          className="w-14 h-14 border border-[#EADFC8] bg-white hover:bg-[#FAF7F2] flex items-center justify-center transition"
           aria-label="Favorito"
         >
           <Heart
             size={20}
             className={`transition ${
-              mounted && isFavorite ? 'fill-red-500 text-red-500' : 'text-caramel/60'
+              mounted && isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'
             }`}
           />
         </button>

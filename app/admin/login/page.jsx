@@ -1,9 +1,11 @@
+// app/admin/login/page.jsx
 'use client'
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Loader2, Lock } from 'lucide-react'
+import { Loader2, Lock, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const woodBg = {
@@ -49,7 +51,16 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4" style={woodBg}>
+    <main className="min-h-screen flex items-center justify-center px-4 relative" style={woodBg}>
+      {/* Botón volver */}
+      <Link
+        href="/"
+        className="absolute top-6 left-6 inline-flex items-center gap-2 text-white/70 hover:text-white transition text-sm border border-white/20 bg-white/5 backdrop-blur-md px-4 py-2 rounded-full"
+      >
+        <ArrowLeft size={16} />
+        Volver a la tienda
+      </Link>
+
       <div className="w-full max-w-md border border-white/25 bg-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,.2)] p-8 text-[#F5EDE3]">
         <div className="text-center mb-8">
           <Image

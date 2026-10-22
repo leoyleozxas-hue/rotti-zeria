@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { ShoppingBag, Menu, X, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
+import { useUIStore } from '@/lib/store/uiStore'
 import { useEffect, useState } from 'react'
 
 const NAV_LINKS = [
@@ -20,6 +21,8 @@ export default function Header() {
   const pathname = usePathname()
   const count = useCartStore((s) => s.getCount())
   const favCount = useFavoritesStore((s) => s.getCount())
+  const openCart = useUIStore((s) => s.openCart)
+  
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -37,7 +40,6 @@ export default function Header() {
           className="relative shrink-0 hover:opacity-90 transition"
           aria-label="Biarritz — Inicio"
         >
-          {/* mix-blend-screen: el fondo negro del PNG se vuelve transparente */}
           <Image
             src="/images/logo-biarritz-blanco.png"
             alt="Biarritz"
@@ -81,18 +83,14 @@ export default function Header() {
             )}
           </Link>
 
-          <Link
-            href="/carrito"
-            className="relative p-2 hover:text-[#E0C89A] transition"
-            aria-label="Carrito"
-          >
+          <button onClick={openCart} className="relative p-2 hover:text-[#E0C89A] transition" aria-label="Carrito">
             <ShoppingBag size={22} />
             {mounted && count > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#C9A96E] text-[#2C1E16] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 {count}
               </span>
             )}
-          </Link>
+          </button>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}

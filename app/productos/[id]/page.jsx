@@ -3,12 +3,14 @@ import { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Clock, Wheat } from 'lucide-react'
+import { ArrowLeft, Clock, Wheat, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import ProductCard from '@/components/ProductCard'
 import AddToCartSection from '@/components/AddToCartSection'
+import ProductCard from '@/components/ProductCard'
 
-// ---------- Info del producto ----------
+// Filtro CSS para que las fotos de Unsplash parezcan de estudio
+const imageFilter = "contrast-[1.05] saturate-[1.1] brightness-[0.98]"
+
 async function ProductInfo({ id }) {
   const supabase = await createClient()
   const { data: product, error } = await supabase
@@ -20,71 +22,83 @@ async function ProductInfo({ id }) {
   if (error || !product) notFound()
 
   return (
-    <>
-      <Link
-        href="/productos"
-        className="inline-flex items-center gap-2 text-caramel hover:text-chocolate transition mb-8 text-sm"
-      >
-        <ArrowLeft size={16} /> Volver al catálogo
-      </Link>
-
-      <div className="grid md:grid-cols-2 gap-10 mb-20">
-        {/* Imagen */}
-        <div className="relative aspect-square rounded-3xl overflow-hidden bg-beige shadow-lg">
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
-              alt={product.name}
-              fill
-              priority
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-caramel/40">
-              Sin imagen
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex flex-col justify-center">
-          <span className="text-gold uppercase tracking-[0.3em] text-xs mb-3">
-            {product.category}
-          </span>
-          <h1 className="font-serif text-4xl md:text-5xl text-chocolate mb-4 leading-tight">
-            {product.name}
-          </h1>
-          <p className="text-caramel leading-relaxed mb-6">
-            {product.description}
-          </p>
-
-          <div className="flex items-end gap-4 mb-8">
-            <span className="font-serif text-4xl text-chocolate">
-              ${Number(product.price).toLocaleString('es-AR')}
-            </span>
-            <span className="text-caramel text-sm mb-1">por unidad</span>
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#FAF7F2]">
+      
+      {/* Mitad Izquierda: Foto Inmensa */}
+      <div className="w-full lg:w-3/5 relative min-h-[50vh] lg:min-h-screen bg-[#EADFC8]">
+        {product.image_url ? (
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            fill
+            priority
+            className={`object-cover ${imageFilter}`}
+            sizes="(max-width: 1024px) 100vw, 60vw"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[#9a8b7a]">
+            Sin imagen
           </div>
-
-          <AddToCartSection product={product} />
-
-          <div className="grid grid-cols-2 gap-4 mt-10 pt-8 border-t border-beige">
-            <div className="flex items-center gap-3 text-sm text-caramel">
-              <Wheat size={18} className="text-gold flex-shrink-0" />
-              <span>Elaboración artesanal</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-caramel">
-              <Clock size={18} className="text-gold flex-shrink-0" />
-              <span>Horneado del día</span>
-            </div>
-          </div>
-        </div>
+        )}
+        
+        {/* Botón Volver flotante sobre la foto */}
+        <Link
+          href="/productos"
+          className="absolute top-6 left-6 z-10 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md text-[#2B0F0B] px-5 py-2.5 rounded-full text-sm font-medium hover:bg-white transition shadow-lg"
+        >
+          <ArrowLeft size={16} /> Volver
+        </Link>
       </div>
-    </>
+
+      {/* Mitad Derecha: Información estilo Editorial */}
+      <div className="w-full lg:w-2/5 flex flex-col justify-center px-8 py-16 lg:px-20 lg:py-24">
+        
+        <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#9a8b7a] mb-6 block">
+          {product.category}
+        </span>
+        
+        <h1 className="font-serif text-5xl lg:text-7xl text-[#2B0F0B] leading-[1.05] mb-6">
+          {product.name}
+        </h1>
+        
+        <p className="text-lg text-gray-600 font-light leading-relaxed mb-10 max-w-md">
+          {product.description}
+        </p>
+
+        <div className="flex items-end gap-4 mb-10">
+          <span className="font-serif text-4xl text-[#2B0F0B]">
+            ${Number(product.price).toLocaleString('es-AR')}
+          </span>
+        </div>
+
+        <div className="border-t border-[#EADFC8] pt-10">
+          <AddToCartSection product={product} />
+        </div>
+
+        {/* Sellos de calidad */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 pt-8 border-t border-[#EADFC8]">
+          <div className="flex items-start gap-3">
+            <Wheat size={20} className="text-[#C9A96E] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#2B0F0B]">100% Artesanal</p>
+              <p className="text-xs text-gray-500 mt-1">Masa madre y fermentación lenta.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <Clock size={20} className="text-[#C9A96E] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#2B0F0B]">Horneado hoy</p>
+              <p className="text-xs text-gray-500 mt-1">Retirá fresco por el local.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   )
 }
 
-// ---------- También te interesa ----------
+// Sección de relacionados con scroll horizontal
 async function RelatedProducts({ category, excludeId }) {
   const supabase = await createClient()
   const { data: products } = await supabase
@@ -93,30 +107,37 @@ async function RelatedProducts({ category, excludeId }) {
     .eq('is_available', true)
     .eq('category', category)
     .neq('id', excludeId)
-    .limit(3)
+    .limit(4)
 
   if (!products || products.length === 0) return null
 
   return (
-    <section className="border-t border-beige pt-16">
-      <div className="mb-10">
-        <span className="text-gold uppercase tracking-[0.3em] text-xs">
-          También te puede interesar
-        </span>
-        <h2 className="font-serif text-3xl md:text-4xl text-chocolate mt-3">
-          Más de {category}
-        </h2>
-      </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
+    <section className="bg-[#FAF7F2] py-20 border-t border-[#EADFC8]">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#9a8b7a] block mb-2">
+              Descubrí más
+            </span>
+            <h2 className="font-serif text-3xl md:text-4xl text-[#2B0F0B]">
+              También de {category}
+            </h2>
+          </div>
+          <Link href={`/productos?categoria=${encodeURIComponent(category)}`} className="hidden md:block text-sm font-medium text-[#2B0F0B] border-b border-[#2B0F0B] pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition">
+            Ver todos
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
       </div>
     </section>
   )
 }
 
-// ---------- Metadata dinámica ----------
 export async function generateMetadata({ params }) {
   const { id } = await params
   const supabase = await createClient()
@@ -134,7 +155,6 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// ---------- Página ----------
 export default async function ProductDetailPage({ params }) {
   const { id } = await params
   const supabase = await createClient()
@@ -145,8 +165,8 @@ export default async function ProductDetailPage({ params }) {
     .single()
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-12">
-      <Suspense fallback={<p className="text-caramel">Cargando...</p>}>
+    <main>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#2B0F0B]">Cargando...</div>}>
         <ProductInfo id={id} />
       </Suspense>
 

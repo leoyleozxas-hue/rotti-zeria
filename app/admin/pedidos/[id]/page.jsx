@@ -27,8 +27,7 @@ const STATUS_COLORS = {
   cancelled: 'bg-red-400/20 text-red-100 border-red-300/30',
 }
 
-const glass =
-  'border border-white/25 bg-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,.2)]'
+const glass = 'relative border border-white/10 bg-[#1a0806]/60 backdrop-blur-xl shadow-xl'
 
 async function getOrder(id) {
   const supabase = await createClient()
