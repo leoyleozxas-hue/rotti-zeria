@@ -74,6 +74,93 @@ h1, h2, h3, h4 {
     color: black !important;
   }
 }
+/* ==========================================================================
+   PANEL DE ADMIN — sistema de diseño propio
+   El panel es un tema oscuro de madera, distinto de la tienda clara. Estos
+   tokens son la única fuente de verdad para superficies, estados y elevación.
+   Nada de hex sueltos en los componentes: si falta un color, se agrega acá.
+   ========================================================================== */
+
+@theme {
+  /* Superficies, de la más profunda a la más elevada */
+  --color-ink-950: #120605;
+  --color-ink-900: #1a0b07;
+  --color-ink-850: #20100a;
+  --color-ink-800: #26130c;
+  --color-ink-700: #2f1810;
+  --color-ink-600: #3b2019;
+
+  /* Estados de pedido: 4 familias semánticas, no 7 colores sueltos */
+  --color-pending: #e8b04b;
+  --color-active: #45b98a;
+  --color-ready: #4bb3d4;
+  --color-closed: #8d8179;
+
+  /* Radios del panel: campo, tarjeta, panel grande */
+  --radius-field: 12px;
+  --radius-card: 18px;
+  --radius-panel: 22px;
+
+  /* Elevación: dos niveles. Más que eso es ruido. */
+  --shadow-panel: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+  --shadow-lift: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 20px 44px -16px rgb(0 0 0 / 0.8);
+}
+
+/* Entrada escalonada de grillas y listas.
+   Se usa con style={{ '--i': index }} para que la cascada dependa del orden. */
+@keyframes admin-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.anim-rise {
+  animation: admin-rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+/* Barrido del esqueleto de carga */
+@keyframes admin-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.anim-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
+  animation: admin-shimmer 1.4s infinite;
+}
+
+/* Foco visible en TODO el panel, sin repetir clases en cada botón */
+.admin-scope :focus-visible {
+  outline: 2px solid var(--color-gold-soft);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* Números alineados en columnas y montos */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise {
+    animation: none;
+  }
+  .anim-shimmer::after {
+    animation: none;
+  }
+}
+
 /* Scrollbar personalizado para el Admin */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

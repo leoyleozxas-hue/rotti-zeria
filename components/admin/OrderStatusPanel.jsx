@@ -1,133 +1,159 @@
 // components/admin/OrderStatusPanel.jsx
+//
+// Acciones sobre un pedido. El botón principal es siempre el siguiente paso
+// lógico del flujo (definido en lib/constants/orders.js), no una lista de
+// estados donde uno puede equivocarse de orden.
+
 'use client'
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowRight, X } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { ArrowRight, CheckCircle2, ChefHat, Loader2, PackageCheck, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
+import { NEXT_STATUS, ORDER_STATUS, STATUS_LIST } from '@/lib/constants/orders'
+import Panel from '@/components/ui/panel'
+import { Button } from '@/components/ui/button'
+import ConfirmDialog from '@/components/ui/confirm-dialog'
+import StatusBadge from '@/components/ui/status-badge'
 
-const FLOW = {
-  pending_payment: { next: 'confirmed', nextLabel: 'Confirmar pago' },
-  payment_review: { next: 'confirmed', nextLabel: 'Confirmar pago' },
-  confirmed: { next: 'preparing', nextLabel: 'Empezar a preparar' },
-  preparing: { next: 'ready', nextLabel: 'Marcar como listo' },
-  ready: { next: 'delivered', nextLabel: 'Marcar como entregado' },
-  delivered: null,
-  cancelled: null,
-}
-
-const STATUS_LABELS = {
-  pending_payment: 'Pendiente de pago',
-  payment_review: 'Revisar pago',
-  confirmed: 'Confirmado',
-  preparing: 'Preparando',
-  ready: 'Listo',
-  delivered: 'Entregado',
-  cancelled: 'Cancelado',
-}
-
-const glass =
-  'relative border border-white/20 bg-white/8 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_8px_32px_rgba(0,0,0,.25)]'
+const ACTION_ICONS = { chef: ChefHat, check: CheckCircle2, package: PackageCheck }
 
 export default function OrderStatusPanel({ order }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [loading, setLoading] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [confirmCancel, setConfirmCancel] = useState(false)
 
-  const flow = FLOW[order.status]
+  const next = NEXT_STATUS[order.status]
+  const NextIcon = next ? ACTION_ICONS[next.icon] : null
   const canCancel = !['delivered', 'cancelled'].includes(order.status)
+  const busy = loading || isPending
 
-  const updateStatus = async (newStatus) => {
+  async function updateStatus(newStatus) {
     if (newStatus === order.status) return
     setLoading(true)
-    const supabase = createClient()
 
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', order.id)
+    const supabase = createClient()
+    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', order.id)
+
+    setLoading(false)
 
     if (error) {
-      toast.error('Error: ' + error.message)
-      setLoading(false)
+      toast.error('No se pudo cambiar el estado', { description: error.message })
       return
     }
 
-    toast.success('Estado actualizado')
-    setLoading(false)
+    toast.success('Estado actualizado', {
+      description: ORDER_STATUS[newStatus]?.label || newStatus,
+    })
     startTransition(() => router.refresh())
   }
 
-  const busy = loading || isPending
-
   return (
-    <div className={`${glass} rounded-2xl p-5 md:p-6`}>
-      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
-        <h2 className="font-serif text-xl text-white">Acciones del pedido</h2>
-        <button
-          onClick={() => setShowAll(!showAll)}
-          className="text-xs text-[#E0C89A] hover:text-white transition underline underline-offset-4"
-        >
-          {showAll ? 'Ocultar opciones' : 'Ver todos los estados'}
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        {/* Botón Principal (Siguiente paso lógico) */}
-        {flow && (
+    <>
+      <Panel tone="glass">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-serif text-base text-white">Acciones del pedido</h2>
           <button
-            onClick={() => updateStatus(flow.next)}
-            disabled={busy}
-            className="w-full flex items-center justify-center gap-2 bg-[#E0C89A] text-[#2b0f0b] py-4 rounded-xl font-bold text-lg hover:bg-white transition disabled:opacity-50 shadow-lg shadow-[#E0C89A]/20"
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            aria-expanded={showAll}
+            className="text-[11px] font-medium text-gold-soft/80 underline underline-offset-4 transition hover:text-white"
           >
-            {busy ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <ArrowRight size={20} />
-            )}
-            {flow.nextLabel}
+            {showAll ? 'Ocultar estados' : 'Ver todos los estados'}
           </button>
-        )}
-
-        {/* Botón Secundario (Cancelar) */}
-        {canCancel && (
-          <button
-            onClick={() => updateStatus('cancelled')}
-            disabled={busy}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-medium text-red-300 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition disabled:opacity-50"
-          >
-            <X size={16} />
-            Cancelar pedido
-          </button>
-        )}
-      </div>
-
-      {/* Opciones avanzadas (Ver todos los estados) */}
-      {showAll && (
-        <div className="mt-6 pt-6 border-t border-white/10">
-          <p className="text-xs text-[#E0C89A] mb-3">
-            Forzar cambio a cualquier estado:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(STATUS_LABELS).map(([value, label]) => (
-              <button
-                key={value}
-                onClick={() => updateStatus(value)}
-                disabled={busy || value === order.status}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition ${
-                  value === order.status
-                    ? 'bg-[#E0C89A]/25 border-[#E0C89A]/50 text-white font-bold'
-                    : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/15 hover:text-white'
-                } disabled:cursor-not-allowed`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
-      )}
-    </div>
+
+        <div className="flex flex-col gap-2">
+          {next && (
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              disabled={busy}
+              onClick={() => updateStatus(next.to)}
+            >
+              {busy ? (
+                <Loader2 size={17} aria-hidden className="animate-spin" />
+              ) : (
+                NextIcon && <NextIcon size={17} aria-hidden />
+              )}
+              {next.label}
+            </Button>
+          )}
+
+          {!next && order.status === 'delivered' && (
+            <p className="rounded-field border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-center text-xs text-white/45">
+              Pedido entregado. No quedan acciones pendientes.
+            </p>
+          )}
+
+          {canCancel && (
+            <Button
+              variant="danger"
+              size="md"
+              className="w-full"
+              disabled={busy}
+              onClick={() => setConfirmCancel(true)}
+            >
+              <X size={15} aria-hidden />
+              Cancelar pedido
+            </Button>
+          )}
+        </div>
+
+        {showAll && (
+          <div className="mt-5 border-t border-white/8 pt-4">
+            <p className="mb-2.5 text-[11px] text-white/45">
+              Forzar un estado puntual (queda registrado igual que el flujo normal):
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_LIST.map(({ value }) => {
+                const isCurrent = value === order.status
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    disabled={busy || isCurrent}
+                    onClick={() => updateStatus(value)}
+                    aria-current={isCurrent ? 'true' : undefined}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition disabled:cursor-not-allowed disabled:opacity-100 ${
+                      isCurrent
+                        ? 'border-gold/45 bg-gold/15 font-semibold text-gold-soft'
+                        : 'border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {ORDER_STATUS[value].label}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.14em] text-white/30">Actual</span>
+              <StatusBadge status={order.status} />
+              <ArrowRight size={11} aria-hidden className="text-white/25" />
+            </div>
+          </div>
+        )}
+      </Panel>
+
+      {/* Fuera del Panel: `backdrop-blur` en un ancestro rompe position:fixed */}
+      <ConfirmDialog
+        open={confirmCancel}
+        destructive
+        title="¿Cancelar el pedido?"
+        description={`El pedido ${order.order_number} pasa a cancelado. No se puede deshacer.`}
+        confirmLabel="Sí, cancelar"
+        cancelLabel="Volver"
+        onConfirm={() => {
+          setConfirmCancel(false)
+          updateStatus('cancelled')
+        }}
+        onCancel={() => setConfirmCancel(false)}
+      />
+    </>
   )
 }

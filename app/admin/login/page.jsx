@@ -1,16 +1,23 @@
 // app/admin/login/page.jsx
+//
+// Puerta del panel. Usa los mismos primitivos que el resto: así el login no
+// parece de otra aplicación.
+
 'use client'
 
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Loader2, Lock, ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Loader2, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import Panel from '@/components/ui/panel'
+import Field, { FormMessage, fieldClass } from '@/components/ui/field'
+import { Button } from '@/components/ui/button'
 
 const woodBg = {
   backgroundImage:
-    "linear-gradient(rgba(18,4,2,.55), rgba(18,4,2,.7)), url('/images/textura-madera-vertical.png')",
+    "linear-gradient(rgba(18,4,2,.62), rgba(18,4,2,.78)), url('/images/textura-madera-vertical.png')",
   backgroundSize: 'cover',
   backgroundPosition: 'center top',
 }
@@ -22,26 +29,23 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  async function handleSubmit(event) {
+    event.preventDefault()
     setLoading(true)
     setError(null)
 
     const supabase = createClient()
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
-      setError('Credenciales inválidas')
+      setError('Email o contraseña incorrectos.')
       setLoading(false)
       return
     }
 
     if (data.user?.app_metadata?.role !== 'admin') {
       await supabase.auth.signOut()
-      setError('No tenés permisos para acceder')
+      setError('Esta cuenta no tiene permisos de administración.')
       setLoading(false)
       return
     }
@@ -51,77 +55,84 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 relative" style={woodBg}>
-      {/* Botón volver */}
+    <main
+      className="admin-scope relative flex min-h-screen items-center justify-center px-4 py-16 text-cream"
+      style={woodBg}
+    >
       <Link
         href="/"
-        className="absolute top-6 left-6 inline-flex items-center gap-2 text-white/70 hover:text-white transition text-sm border border-white/20 bg-white/5 backdrop-blur-md px-4 py-2 rounded-full"
+        className="absolute left-4 top-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/6 px-3.5 py-2 text-xs text-white/70 backdrop-blur transition hover:bg-white/12 hover:text-white sm:left-6"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={14} aria-hidden />
         Volver a la tienda
       </Link>
 
-      <div className="w-full max-w-md border border-white/25 bg-white/15 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,.2)] p-8 text-[#F5EDE3]">
-        <div className="text-center mb-8">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 text-center">
           <Image
             src="/images/logo-biarritz-blanco.png"
             alt="Biarritz"
             width={200}
             height={73}
-            className="h-12 w-auto mx-auto mb-4 mix-blend-screen"
+            priority
+            className="mx-auto mb-5 h-12 w-auto mix-blend-screen"
           />
-          <div className="w-12 h-12 rounded-full border border-white/30 bg-white/10 flex items-center justify-center mx-auto mb-4">
-            <Lock size={20} />
-          </div>
-          <h1 className="font-serif text-3xl text-white">Panel Biarritz</h1>
-          <p className="text-white/65 text-sm mt-2">Acceso restringido</p>
+          <h1 className="font-serif text-2xl text-white">Panel Biarritz</h1>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-gold-soft/70">
+            <ShieldCheck size={12} aria-hidden />
+            Acceso restringido
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm text-white/70 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2.5 border border-white/25 bg-white/10 backdrop-blur-md text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none transition"
-              placeholder="admin@biarritz.com"
-            />
-          </div>
+        <Panel tone="raised">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Field label="Email" htmlFor="email" required>
+              {({ hasError }) => (
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@biarritz.com"
+                  className={fieldClass(hasError)}
+                />
+              )}
+            </Field>
 
-          <div>
-            <label className="block text-sm text-white/70 mb-1">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2.5 border border-white/25 bg-white/10 backdrop-blur-md text-white focus:border-white/50 focus:outline-none transition"
-            />
-          </div>
+            <Field label="Contraseña" htmlFor="password" required>
+              {({ hasError }) => (
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={fieldClass(hasError)}
+                />
+              )}
+            </Field>
 
-          {error && (
-            <p className="text-red-200 text-sm bg-red-500/20 border border-red-400/30 p-3">
-              {error}
-            </p>
-          )}
+            <FormMessage>{error}</FormMessage>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-[#F5EDE3] text-[#2b0f0b] py-3.5 rounded-full hover:bg-white transition disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Ingresando...
-              </>
-            ) : (
-              'Ingresar'
-            )}
-          </button>
-        </form>
+            <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 size={16} aria-hidden className="animate-spin" />
+                  Ingresando…
+                </>
+              ) : (
+                'Ingresar'
+              )}
+            </Button>
+          </form>
+        </Panel>
+
+        <p className="mt-5 text-center text-[11px] text-white/30">
+          Si perdiste el acceso, pedile a quien administra el sitio que resetee tu cuenta.
+        </p>
       </div>
     </main>
   )

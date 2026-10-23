@@ -8,7 +8,8 @@ import { ShoppingBag, Menu, X, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
 import { useUIStore } from '@/lib/store/uiStore'
-import { useEffect, useState } from 'react'
+import useHydrated from '@/lib/hooks/useHydrated'
+import { useState } from 'react'
 
 const NAV_LINKS = [
   { href: '/', label: 'Inicio' },
@@ -23,11 +24,8 @@ export default function Header() {
   const favCount = useFavoritesStore((s) => s.getCount())
   const openCart = useUIStore((s) => s.openCart)
   
-  const [mounted, setMounted] = useState(false)
+  const mounted = useHydrated()
   const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => setMounted(true), [])
-  useEffect(() => { setMenuOpen(false) }, [pathname])
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#1a0806]/50 backdrop-blur-xl supports-[backdrop-filter]:bg-[#1a0806]/40">
@@ -104,6 +102,7 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => setMenuOpen(false)}
                   className={`py-3 px-2 transition ${
                     active
                       ? 'text-white font-semibold border-l-2 border-[#C9A96E] pl-3'

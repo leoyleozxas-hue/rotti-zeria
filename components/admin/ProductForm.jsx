@@ -1,24 +1,34 @@
 // components/admin/ProductForm.jsx
+//
+// Alta y edición de producto. Misma estructura en los dos modos: el formulario
+// no sabe si está creando o editando, sólo recibe initialData.
+
 'use client'
 
-import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, UploadCloud, Image as ImageIcon } from 'lucide-react'
+import { ChevronDown, ImageIcon, Loader2, UploadCloud } from 'lucide-react'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { productSchema } from '@/lib/validations/product'
-import { toast } from 'sonner'
+import { CATEGORIES } from '@/lib/constants/catalog'
+import Panel, { PanelHeader } from '@/components/ui/panel'
+import Field, { fieldClass } from '@/components/ui/field'
+import { Button } from '@/components/ui/button'
 
-const CATEGORIES = ['Panes', 'Facturas', 'Dulces', 'Salados', 'Bocados calientes']
-
-const glass =
-  'relative border border-white/20 bg-white/8 backdrop-blur-2xl shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_8px_32px_rgba(0,0,0,.25)]'
+// Fuera del componente: Date.now() y Math.random() son impuros y no pueden
+// evaluarse durante el render (regla de pureza de React).
+function uniqueFileName(file) {
+  const extension = file.name.split('.').pop()
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
+}
 
 export default function ProductForm({ initialData = null }) {
   const router = useRouter()
-  const isEditing = !!initialData
+  const isEditing = Boolean(initialData)
   const fileInputRef = useRef(null)
 
   const [imageFile, setImageFile] = useState(null)
@@ -28,23 +38,23 @@ export default function ProductForm({ initialData = null }) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: initialData?.name || '',
       description: initialData?.description || '',
-      price: initialData?.price || '',
+      price: initialData?.price ?? '',
       category: initialData?.category || CATEGORIES[0],
       is_available: initialData?.is_available ?? true,
     },
   })
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0]
+  function handleImageChange(event) {
+    const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.error('El archivo debe ser una imagen')
+      toast.error('El archivo tiene que ser una imagen')
       return
     }
     setImageFile(file)
@@ -53,171 +63,223 @@ export default function ProductForm({ initialData = null }) {
     reader.readAsDataURL(file)
   }
 
-  const onSubmit = async (data) => {
+  async function onSubmit(data) {
     setLoading(true)
 
     try {
       const supabase = createClient()
-      let finalImageUrl = initialData?.image_url || null
+      let imageUrl = initialData?.image_url || null
 
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-        
+        const fileName = uniqueFileName(imageFile)
+
         const { error: uploadError } = await supabase.storage
           .from('product-images')
           .upload(fileName, imageFile)
-
         if (uploadError) throw uploadError
 
         const { data: urlData } = supabase.storage
           .from('product-images')
           .getPublicUrl(fileName)
-
-        finalImageUrl = urlData.publicUrl
+        imageUrl = urlData.publicUrl
       }
 
-      const productData = {
-        ...data,
-        image_url: finalImageUrl,
-      }
+      const payload = { ...data, image_url: imageUrl }
 
       if (isEditing) {
-        const { error } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', initialData.id)
+        const { error } = await supabase.from('products').update(payload).eq('id', initialData.id)
         if (error) throw error
-        toast.success('Producto actualizado correctamente')
+        toast.success('Producto actualizado')
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([productData])
+        const { error } = await supabase.from('products').insert([payload])
         if (error) throw error
-        toast.success('Producto creado correctamente')
+        toast.success('Producto creado')
       }
 
       router.push('/admin/productos')
       router.refresh()
-
     } catch (error) {
-      console.error(error)
-      toast.error(error.message || 'Error al guardar el producto')
+      toast.error('No se pudo guardar', { description: error.message })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl space-y-8">
-      <div className="grid md:grid-cols-[1fr_300px] gap-8">
-        
-        <div className={`${glass} rounded-2xl p-6 space-y-5`}>
-          <h2 className="font-serif text-xl text-white border-b border-white/10 pb-3">
-            Información del producto
-          </h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        <Panel tone="glass" padded={false}>
+          <PanelHeader title="Información del producto" />
 
-          <div>
-            <label className="block text-sm text-white/70 mb-1">Nombre</label>
-            <input
-              {...register('name')}
-              className="w-full px-4 py-3 rounded-xl border border-white/20 bg-white/5 text-white focus:border-[#E0C89A] focus:outline-none transition"
-            />
-            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
-          </div>
+          <div className="space-y-4 p-5 md:p-6">
+            <Field label="Nombre" htmlFor="name" required error={errors.name?.message}>
+              {({ errorId, hasError }) => (
+                <input
+                  id="name"
+                  {...register('name')}
+                  aria-invalid={hasError}
+                  aria-describedby={errorId}
+                  className={fieldClass(hasError)}
+                />
+              )}
+            </Field>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-white/70 mb-1">Precio ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                {...register('price')}
-                className="w-full px-4 py-3 rounded-xl border border-white/20 bg-white/5 text-white focus:border-[#E0C89A] focus:outline-none transition"
-              />
-              {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm text-white/70 mb-1">Categoría</label>
-              <select
-                {...register('category')}
-                className="w-full px-4 py-3 rounded-xl border border-white/20 bg-[#150604] text-white focus:border-[#E0C89A] focus:outline-none appearance-none"
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Precio"
+                htmlFor="price"
+                required
+                hint="En pesos, sin puntos"
+                error={errors.price?.message}
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+                {({ errorId, hasError }) => (
+                  <input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    {...register('price')}
+                    aria-invalid={hasError}
+                    aria-describedby={errorId}
+                    className={`tabular ${fieldClass(hasError)}`}
+                  />
+                )}
+              </Field>
+
+              <Field label="Categoría" htmlFor="category" required error={errors.category?.message}>
+                {({ errorId, hasError }) => (
+                  <div className="relative">
+                    <select
+                      id="category"
+                      {...register('category')}
+                      aria-invalid={hasError}
+                      aria-describedby={errorId}
+                      className={`cursor-pointer appearance-none pr-9 ${fieldClass(hasError)}`}
+                    >
+                      {CATEGORIES.map((category) => (
+                        <option key={category} value={category} className="bg-ink-900 text-cream">
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={14}
+                      aria-hidden
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+                    />
+                  </div>
+                )}
+              </Field>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm text-white/70 mb-1">Descripción</label>
-            <textarea
-              rows={4}
-              {...register('description')}
-              className="w-full px-4 py-3 rounded-xl border border-white/20 bg-white/5 text-white focus:border-[#E0C89A] focus:outline-none transition resize-none"
-            />
-            {errors.description && <p className="text-red-400 text-xs mt-1">{errors.description.message}</p>}
-          </div>
+            <Field
+              label="Descripción"
+              htmlFor="description"
+              required
+              hint="Mínimo 10 caracteres"
+              error={errors.description?.message}
+            >
+              {({ errorId, hasError }) => (
+                <textarea
+                  id="description"
+                  rows={4}
+                  {...register('description')}
+                  aria-invalid={hasError}
+                  aria-describedby={errorId}
+                  className={`${fieldClass(hasError)} h-auto resize-none py-2.5`}
+                />
+              )}
+            </Field>
 
-          <div className="flex items-center gap-3 pt-2">
-            <input
-              type="checkbox"
-              id="isAvailable"
-              {...register('is_available')}
-              className="w-5 h-5 accent-[#E0C89A] cursor-pointer"
-            />
-            <label htmlFor="isAvailable" className="text-sm text-white/80 cursor-pointer">
-              Producto visible y disponible en la tienda
+            <label
+              htmlFor="is_available"
+              className="flex cursor-pointer items-center gap-3 rounded-field border border-white/10 bg-white/[0.03] px-3.5 py-3 transition hover:border-white/20"
+            >
+              <input
+                id="is_available"
+                type="checkbox"
+                {...register('is_available')}
+                className="h-4 w-4 cursor-pointer accent-gold-soft"
+              />
+              <span className="text-sm text-white/75">
+                Visible en la tienda
+                <span className="ml-1 text-xs text-white/35">
+                  (si lo desmarcás queda cargado pero oculto)
+                </span>
+              </span>
             </label>
           </div>
-        </div>
+        </Panel>
 
-        <div className="space-y-6">
-          <div className={`${glass} rounded-2xl p-6`}>
-            <h2 className="font-serif text-lg text-white mb-4">Imagen</h2>
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="relative aspect-square rounded-xl border-2 border-dashed border-white/20 bg-white/5 hover:bg-white/10 transition cursor-pointer overflow-hidden flex flex-col items-center justify-center group"
-            >
-              {imagePreview ? (
-                <>
-                  <Image src={imagePreview} alt="Preview" fill className="object-cover" />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                    <p className="text-white text-sm font-medium flex items-center gap-2">
-                      <UploadCloud size={16} /> Cambiar foto
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center p-4">
-                  <ImageIcon size={32} className="mx-auto text-white/30 mb-2" />
-                  <p className="text-sm text-white/60">Click para subir foto</p>
-                </div>
-              )}
+        <div className="space-y-5">
+          <Panel tone="glass" padded={false}>
+            <PanelHeader title="Imagen" />
+
+            <div className="p-5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="group relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-card border-2 border-dashed border-white/15 bg-white/[0.03] transition hover:border-gold/50 hover:bg-white/[0.06]"
+              >
+                {imagePreview ? (
+                  <>
+                    <Image src={imagePreview} alt="" fill sizes="300px" className="object-cover" />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-xs font-medium text-white opacity-0 transition group-hover:opacity-100">
+                      <UploadCloud size={16} aria-hidden className="mr-1.5" />
+                      Cambiar foto
+                    </span>
+                  </>
+                ) : (
+                  <span className="flex flex-col items-center gap-2 text-white/35">
+                    <ImageIcon size={26} aria-hidden />
+                    <span className="text-xs">Click para subir una foto</span>
+                  </span>
+                )}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <p className="mt-2 text-[10px] text-white/30">
+                Cuadrada se ve mejor en la grilla. Máx. 5 MB.
+              </p>
             </div>
-            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
-          </div>
+          </Panel>
 
-          <div className="flex flex-col gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-[#E0C89A] text-[#2b0f0b] py-3.5 rounded-full font-bold hover:bg-white transition disabled:opacity-50"
-            >
-              {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando...</> : 'Guardar producto'}
-            </button>
-            <button
+          <div className="flex flex-col gap-2">
+            <Button type="submit" variant="primary" size="lg" disabled={loading} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 size={16} aria-hidden className="animate-spin" />
+                  Guardando…
+                </>
+              ) : isEditing ? (
+                'Guardar cambios'
+              ) : (
+                'Crear producto'
+              )}
+            </Button>
+
+            <Button
               type="button"
-              onClick={() => router.push('/admin/productos')}
+              variant="ghost"
+              size="md"
               disabled={loading}
-              className="w-full py-3 rounded-full text-sm text-white/60 hover:text-white transition"
+              className="w-full"
+              onClick={() => router.push('/admin/productos')}
             >
               Cancelar
-            </button>
+            </Button>
+
+            {isEditing && isDirty && (
+              <p className="text-center text-[10px] text-gold-soft/70">Tenés cambios sin guardar</p>
+            )}
           </div>
         </div>
-
       </div>
     </form>
   )

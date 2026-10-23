@@ -6,17 +6,13 @@ import Link from 'next/link'
 import { Plus, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
-import { useEffect, useState } from 'react'
+import useHydrated from '@/lib/hooks/useHydrated'
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem)
   const toggleFav = useFavoritesStore((s) => s.toggle)
   const isFavorite = useFavoritesStore((s) => product ? s.isFavorite(product.id) : false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useHydrated()
 
   if (!product) return null
 
