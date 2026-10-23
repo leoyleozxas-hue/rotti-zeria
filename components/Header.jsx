@@ -27,10 +27,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => setMounted(true), [])
-
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [pathname])
+  useEffect(() => { setMenuOpen(false) }, [pathname])
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#1a0806]/50 backdrop-blur-xl supports-[backdrop-filter]:bg-[#1a0806]/40">
@@ -43,10 +40,10 @@ export default function Header() {
           <Image
             src="/images/logo-biarritz-blanco.png"
             alt="Biarritz"
-            width={220}
-            height={80}
+            width={260}
+            height={96}
             priority
-            className="h-11 sm:h-12 w-auto mix-blend-screen"
+            className="h-14 sm:h-16 w-auto mix-blend-screen"
           />
         </Link>
 
@@ -70,11 +67,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-1 text-white">
-          <Link
-            href="/favoritos"
-            className="relative p-2 hover:text-[#E0C89A] transition"
-            aria-label="Favoritos"
-          >
+          <Link href="/favoritos" className="relative p-2 hover:text-[#E0C89A] transition" aria-label="Favoritos">
             <Heart size={22} />
             {mounted && favCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">

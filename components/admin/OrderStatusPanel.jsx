@@ -63,56 +63,52 @@ export default function OrderStatusPanel({ order }) {
   const busy = loading || isPending
 
   return (
-    <div className={`${glass} rounded-2xl p-6`}>
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 className="font-serif text-lg text-white">Acciones</h2>
+    <div className={`${glass} rounded-2xl p-5 md:p-6`}>
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+        <h2 className="font-serif text-xl text-white">Acciones del pedido</h2>
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-xs text-white/50 hover:text-white transition"
+          className="text-xs text-[#E0C89A] hover:text-white transition underline underline-offset-4"
         >
           {showAll ? 'Ocultar opciones' : 'Ver todos los estados'}
         </button>
       </div>
 
-      <p className="text-sm text-white/55 mb-5">
-        Estado actual:{' '}
-        <strong className="text-white">
-          {STATUS_LABELS[order.status] || order.status}
-        </strong>
-      </p>
-
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3">
+        {/* Botón Principal (Siguiente paso lógico) */}
         {flow && (
           <button
             onClick={() => updateStatus(flow.next)}
             disabled={busy}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#E0C89A] to-[#C9A96E] text-[#2b0f0b] px-6 py-3 rounded-full font-medium hover:from-white hover:to-[#E0C89A] transition disabled:opacity-50 shadow-[0_4px_20px_rgba(201,169,110,.35)]"
+            className="w-full flex items-center justify-center gap-2 bg-[#E0C89A] text-[#2b0f0b] py-4 rounded-xl font-bold text-lg hover:bg-white transition disabled:opacity-50 shadow-lg shadow-[#E0C89A]/20"
           >
             {busy ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 size={20} className="animate-spin" />
             ) : (
-              <ArrowRight size={16} />
+              <ArrowRight size={20} />
             )}
             {flow.nextLabel}
           </button>
         )}
 
+        {/* Botón Secundario (Cancelar) */}
         {canCancel && (
           <button
             onClick={() => updateStatus('cancelled')}
             disabled={busy}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm text-red-200 border border-red-400/40 bg-red-500/10 hover:bg-red-500/20 transition disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-medium text-red-300 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition disabled:opacity-50"
           >
-            <X size={14} />
+            <X size={16} />
             Cancelar pedido
           </button>
         )}
       </div>
 
+      {/* Opciones avanzadas (Ver todos los estados) */}
       {showAll && (
         <div className="mt-6 pt-6 border-t border-white/10">
-          <p className="text-xs text-white/50 mb-3">
-            Cambiar manualmente a cualquier estado:
+          <p className="text-xs text-[#E0C89A] mb-3">
+            Forzar cambio a cualquier estado:
           </p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -120,9 +116,9 @@ export default function OrderStatusPanel({ order }) {
                 key={value}
                 onClick={() => updateStatus(value)}
                 disabled={busy || value === order.status}
-                className={`px-3 py-1.5 text-xs rounded-full border transition ${
+                className={`px-3 py-1.5 text-xs rounded-lg border transition ${
                   value === order.status
-                    ? 'bg-[#E0C89A]/25 border-[#E0C89A]/50 text-white'
+                    ? 'bg-[#E0C89A]/25 border-[#E0C89A]/50 text-white font-bold'
                     : 'bg-white/5 border-white/15 text-white/70 hover:bg-white/15 hover:text-white'
                 } disabled:cursor-not-allowed`}
               >

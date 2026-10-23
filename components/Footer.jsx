@@ -1,3 +1,7 @@
+// components/Footer.jsx
+import Link from 'next/link'
+import { Lock } from 'lucide-react'
+
 export default function Footer() {
   return (
     <footer
@@ -29,8 +33,22 @@ export default function Footer() {
           <p className="text-sm text-cream/70">Dom: 8:00 - 13:00</p>
         </div>
       </div>
-      <div className="border-t border-cream/10 py-4 text-center text-xs text-cream/50">
-        © {new Date().getFullYear()} Biarritz. Todos los derechos reservados.
+
+      {/* Barra inferior del Footer */}
+      <div className="border-t border-cream/10 py-4">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-cream/50">
+          <p>© {new Date().getFullYear()} Biarritz. Todos los derechos reservados.</p>
+          
+          {/* Botón de Acceso Admin */}
+          <Link 
+            href="/admin/login" 
+            className="flex items-center gap-1.5 hover:text-[#C9A96E] transition-colors group"
+            title="Acceso al panel de administración"
+          >
+            <Lock size={12} className="group-hover:text-[#C9A96E] transition-colors" />
+            <span>Acceso Admin</span>
+          </Link>
+        </div>
       </div>
     </footer>
   )
