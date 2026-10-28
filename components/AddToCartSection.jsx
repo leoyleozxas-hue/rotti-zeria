@@ -1,11 +1,12 @@
 // components/AddToCartSection.jsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Minus, Plus, ShoppingBag, Heart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
+import useHydrated from '@/lib/hooks/useHydrated'
 
 export default function AddToCartSection({ product }) {
   const router = useRouter()
@@ -14,9 +15,7 @@ export default function AddToCartSection({ product }) {
   const isFavorite = useFavoritesStore((s) => s.isFavorite(product.id))
 
   const [quantity, setQuantity] = useState(1)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
+  const mounted = useHydrated()
 
   const handleAdd = () => {
     for (let i = 0; i < quantity; i++) {

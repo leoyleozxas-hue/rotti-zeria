@@ -33,6 +33,14 @@ export async function proxy(request) {
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
   const isLoginRoute = request.nextUrl.pathname === '/admin/login'
 
+  // Ruta de preview de diseño: sin sesión, sólo en desarrollo. En producción
+  // esta rama no existe y la página además devuelve 404.
+  const isPreviewRoute = request.nextUrl.pathname.startsWith('/admin/preview')
+
+  if (isPreviewRoute && process.env.NODE_ENV !== 'production') {
+    return response
+  }
+
   if (isAdminRoute && !isLoginRoute) {
     if (!user) {
       return NextResponse.redirect(new URL('/admin/login', request.url))

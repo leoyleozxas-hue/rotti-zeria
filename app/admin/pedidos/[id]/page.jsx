@@ -1,57 +1,77 @@
 // app/admin/pedidos/[id]/page.jsx
-import Link from 'next/link'
+//
+// Detalle de pedido. Esta versión reemplaza a las dos copias que existían
+// (pedidos/[id] viejo y productos/[id] por error): se queda con la mejor de las
+// dos —botón de WhatsApp, fallback de imágenes— ya restilizada con el sistema.
+
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, Truck } from 'lucide-react'
+import {
+  Calendar,
+  Clock,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Truck,
+  User,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import OrderStatusPanel from '@/components/admin/OrderStatusPanel'
 import PrintButton from '@/components/admin/PrintButton'
-
-const STATUS_LABELS = {
-  pending_payment: 'Pendiente de pago',
-  payment_review: 'Revisar pago',
-  confirmed: 'Confirmado',
-  preparing: 'Preparando',
-  ready: 'Listo',
-  delivered: 'Entregado',
-  cancelled: 'Cancelado',
-}
-
-const STATUS_COLORS = {
-  pending_payment: 'bg-amber-400/20 text-amber-100 border-amber-300/30',
-  payment_review: 'bg-orange-400/20 text-orange-100 border-orange-300/30',
-  confirmed: 'bg-sky-400/20 text-sky-100 border-sky-300/30',
-  preparing: 'bg-violet-400/20 text-violet-100 border-violet-300/30',
-  ready: 'bg-emerald-400/20 text-emerald-100 border-emerald-300/30',
-  delivered: 'bg-white/15 text-white/80 border-white/20',
-  cancelled: 'bg-red-400/20 text-red-100 border-red-300/30',
-}
-
-const glass = 'relative border border-white/10 bg-[#1a0806]/60 backdrop-blur-xl shadow-xl'
+import Panel, { PanelHeader } from '@/components/ui/panel'
+import StatusBadge from '@/components/ui/status-badge'
+import PageHeader from '@/components/ui/page-header'
+import { ButtonLink } from '@/components/ui/button'
 
 async function getOrder(id) {
   const supabase = await createClient()
 
-  const { data: order, error } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('id', id)
-    .single()
-
+  const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single()
   if (error || !order) return null
 
-  const { data: items } = await supabase
+  const { data: items, error: itemsError } = await supabase
     .from('order_items')
     .select('*')
     .eq('order_id', id)
 
-  return { order, items: items || [] }
+  if (itemsError) return { order, items: [] }
+
+  // Los ítems guardan nombre y foto como snapshot; si vinieron vacíos se
+  // completan con el producto actual para que la cocina vea qué preparar.
+  let productMap = {}
+  const productIds = (items || []).map((i) => i.product_id).filter(Boolean)
+  if (productIds.length) {
+    const { data: products } = await supabase
+      .from('products')
+      .select('id, name, image_url')
+      .in('id', productIds)
+    if (products) productMap = Object.fromEntries(products.map((p) => [p.id, p]))
+  }
+
+  const enriched = (items || []).map((item) => {
+    const fallback = item.product_id ? productMap[item.product_id] : null
+    const name = item.product_name
+    const usableName =
+      name && name !== 'Producto sin nombre' && name !== 'Producto eliminado'
+        ? name
+        : fallback?.name
+
+    return {
+      ...item,
+      display_name: usableName || 'Producto eliminado',
+      display_image: item.product_image || fallback?.image_url || null,
+    }
+  })
+
+  return { order, items: enriched }
 }
+
+const money = (value) => `$${Number(value).toLocaleString('es-AR')}`
 
 export default async function OrderDetailPage({ params }) {
   const { id } = await params
   const data = await getOrder(id)
-
   if (!data) notFound()
 
   const { order, items } = data
@@ -65,146 +85,165 @@ export default async function OrderDetailPage({ params }) {
   })
 
   const pickupDate = order.pickup_date
-    ? new Date(order.pickup_date + 'T00:00:00').toLocaleDateString('es-AR', {
+    ? new Date(`${order.pickup_date}T00:00:00`).toLocaleDateString('es-AR', {
         weekday: 'long',
         day: '2-digit',
         month: 'long',
       })
     : null
 
-  return (
-    <div className="space-y-6 text-[#F5EDE3] max-w-5xl">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Link
-          href="/admin/pedidos"
-          className="inline-flex items-center gap-2 text-white/70 hover:text-white transition text-sm"
-        >
-          <ArrowLeft size={16} /> Volver a pedidos
-        </Link>
-        <PrintButton />
-      </div>
+  const cleanPhone = order.customer_phone?.replace(/\D/g, '')
+  const whatsappLink = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        `Hola ${order.customer_name}, te escribimos de Biarritz por tu pedido ${order.order_number}.`
+      )}`
+    : null
 
-      {/* Cabecera */}
-      <div className={`${glass} p-6`}>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-[#E0C89A] mb-1">
-              Pedido
-            </p>
-            <h1 className="font-serif text-3xl text-white font-mono">
-              {order.order_number}
-            </h1>
-            <p className="text-white/55 text-sm mt-2">Creado el {createdAt}</p>
-          </div>
-          <span
-            className={`text-xs px-3 py-1.5 rounded-full font-medium border ${
-              STATUS_COLORS[order.status] || 'bg-white/15 text-white/80 border-white/20'
-            }`}
-          >
-            {STATUS_LABELS[order.status] || order.status}
+  return (
+    <div className="mx-auto w-full max-w-4xl space-y-4">
+      <PageHeader
+        eyebrow="Pedido"
+        title={order.order_number}
+        description={`Creado el ${createdAt}`}
+        backHref="/admin/pedidos"
+        backLabel="Volver a pedidos"
+        actions={<PrintButton />}
+      />
+
+      {/* Ítems a preparar */}
+      <Panel tone="glass" padded={false}>
+        <PanelHeader
+          title="Productos a preparar"
+          action={<StatusBadge status={order.status} size="md" />}
+        />
+
+        <ul className="divide-y divide-white/8">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center gap-4 px-5 py-4">
+              {item.display_image ? (
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-field border border-white/10 bg-ink-950">
+                  <Image src={item.display_image} alt="" fill sizes="56px" className="object-cover" />
+                </div>
+              ) : (
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-field border border-white/10 bg-white/5 text-[10px] text-white/25">
+                  Sin foto
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-white">{item.display_name}</p>
+                <p className="tabular mt-0.5 text-xs text-white/45">
+                  {money(item.unit_price)} c/u
+                </p>
+              </div>
+
+              <div className="shrink-0 text-right">
+                <span className="tabular mr-3 text-sm font-semibold text-gold-soft">
+                  {item.quantity}×
+                </span>
+                <span className="tabular font-semibold text-white">{money(item.subtotal)}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex items-center justify-between border-t border-gold/25 bg-gradient-to-r from-gold/10 to-transparent px-5 py-4">
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
+            Total
+          </span>
+          <span className="tabular font-serif text-2xl font-semibold text-white">
+            {money(order.total)}
           </span>
         </div>
-      </div>
+      </Panel>
 
-      {/* Grid: cliente + entrega */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Cliente */}
-        <div className={`${glass} p-6 space-y-3`}>
-          <h2 className="font-serif text-lg text-white mb-3">Cliente</h2>
-          <p className="text-white font-medium">{order.customer_name}</p>
+      {/* Cliente y entrega */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Panel tone="glass">
+          <h2 className="mb-3 flex items-center gap-2 border-b border-white/8 pb-3 font-serif text-base text-white">
+            <User size={15} aria-hidden className="text-gold-soft" />
+            Cliente
+          </h2>
 
-          <div className="flex items-center gap-2 text-sm text-white/75">
-            <Phone size={14} className="text-[#E0C89A]" />
+          <p className="font-semibold text-white">{order.customer_name}</p>
+
+          <a
+            href={`tel:${cleanPhone}`}
+            className="mt-2 flex items-center gap-2 text-sm text-white/60 transition hover:text-gold-soft"
+          >
+            <Phone size={13} aria-hidden className="shrink-0" />
             {order.customer_phone}
-          </div>
+          </a>
 
           {order.customer_email && (
-            <div className="flex items-center gap-2 text-sm text-white/75">
-              <Mail size={14} className="text-[#E0C89A]" />
+            <a
+              href={`mailto:${order.customer_email}`}
+              className="mt-1.5 flex items-center gap-2 text-sm text-white/60 transition hover:text-gold-soft"
+            >
+              <Mail size={13} aria-hidden className="shrink-0" />
               {order.customer_email}
-            </div>
+            </a>
           )}
-        </div>
 
-        {/* Entrega */}
-        <div className={`${glass} p-6 space-y-3`}>
-          <h2 className="font-serif text-lg text-white mb-3">Entrega</h2>
+          {whatsappLink && (
+            <ButtonLink
+              href={whatsappLink}
+              variant="success"
+              size="sm"
+              className="mt-4"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle size={14} aria-hidden />
+              Escribir por WhatsApp
+            </ButtonLink>
+          )}
+        </Panel>
 
-          <div className="flex items-center gap-2 text-sm text-white/75">
-            <Truck size={14} className="text-[#E0C89A]" />
-            {order.delivery_type === 'pickup' ? 'Retiro en local' : 'Envío a domicilio'}
-          </div>
+        <Panel tone="glass">
+          <h2 className="mb-3 flex items-center gap-2 border-b border-white/8 pb-3 font-serif text-base text-white">
+            <Truck size={15} aria-hidden className="text-gold-soft" />
+            Entrega
+          </h2>
+
+          <p className="font-medium text-white">
+            {order.delivery_type === 'pickup' ? 'Retiro en el local' : 'Envío a domicilio'}
+          </p>
 
           {order.address && (
-            <div className="flex items-start gap-2 text-sm text-white/75">
-              <MapPin size={14} className="text-[#E0C89A] mt-1 shrink-0" />
-              <span>{order.address}</span>
-            </div>
+            <p className="mt-2 flex items-start gap-2 text-sm text-white/60">
+              <MapPin size={13} aria-hidden className="mt-0.5 shrink-0" />
+              {order.address}
+            </p>
           )}
 
           {pickupDate && (
-            <div className="flex items-center gap-2 text-sm text-white/75">
-              <Calendar size={14} className="text-[#E0C89A]" />
-              <span className="capitalize">{pickupDate}</span>
-              {order.pickup_time && <span>· {order.pickup_time}</span>}
-            </div>
+            <p className="mt-1.5 flex items-center gap-2 text-sm capitalize text-white/60">
+              <Calendar size={13} aria-hidden className="shrink-0" />
+              {pickupDate}
+              {order.pickup_time && <span className="text-white/40">· {order.pickup_time} hs</span>}
+            </p>
           )}
-        </div>
+
+          <p className="mt-1.5 flex items-center gap-2 text-sm text-white/40">
+            <Clock size={13} aria-hidden className="shrink-0" />
+            Ingresado el {createdAt}
+          </p>
+        </Panel>
       </div>
 
-      {/* Items */}
-      <div className={`${glass} overflow-hidden`}>
-        <div className="p-6 border-b border-white/15">
-          <h2 className="font-serif text-lg text-white">Productos</h2>
-        </div>
-        <div className="divide-y divide-white/10">
-          {items.map((item) => (
-            <div key={item.id} className="p-5 flex items-center gap-4">
-              {item.product_image && (
-                <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-white/10 shrink-0">
-                  <Image
-                    src={item.product_image}
-                    alt={item.product_name || 'Producto'}
-                    fill
-                    className="object-cover"
-                    sizes="56px"
-                  />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-medium">
-                  {item.product_name || 'Producto sin nombre'}
-                </p>
-                <p className="text-sm text-white/60">
-                  {item.quantity} × ${Number(item.unit_price).toLocaleString('es-AR')}
-                </p>
-              </div>
-              <span className="text-white font-semibold">
-                ${Number(item.subtotal).toLocaleString('es-AR')}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="p-6 border-t border-white/15 flex justify-between items-center bg-white/5">
-          <span className="text-white/70">Total</span>
-          <span className="font-serif text-2xl text-white">
-            ${Number(order.total).toLocaleString('es-AR')}
-          </span>
-        </div>
-      </div>
-
-      {/* Panel de cambio de estado */}
-      <OrderStatusPanel order={order} />
-
-      {/* Notas de pago */}
       {order.payment_reference && (
-        <div className={`${glass} p-6`}>
-          <h2 className="font-serif text-lg text-white mb-2">
-            Referencia de pago
-          </h2>
-          <p className="text-sm text-white/75 font-mono">{order.payment_reference}</p>
-        </div>
+        <Panel tone="glass">
+          <h2 className="mb-2 font-serif text-base text-white">Referencia de pago</h2>
+          <p className="inline-block rounded-field border border-white/10 bg-ink-950/60 px-4 py-2 font-mono text-sm text-white/75">
+            {order.payment_reference}
+          </p>
+        </Panel>
       )}
+
+      <div className="print:hidden">
+        <OrderStatusPanel order={order} />
+      </div>
     </div>
   )
 }

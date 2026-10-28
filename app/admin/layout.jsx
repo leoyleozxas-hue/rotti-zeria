@@ -1,47 +1,26 @@
 // app/admin/layout.jsx
+//
+// Shell del panel: sidebar de madera con navegación agrupada, topbar sticky con
+// el título real de la ruta y un único punto de foco visible (`.admin-scope`).
+
 'use client'
 
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import {
-  LayoutDashboard, ShoppingBag, Package, LogOut, Home, Menu, X,
-  ExternalLink, Calendar, ChevronDown, Star, Sandwich,
+  Calendar,
+  ChevronDown,
+  ExternalLink,
+  Home,
+  LogOut,
+  Menu,
+  X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Toaster } from 'sonner'
-
-const NAV_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { 
-    label: 'Pedidos', 
-    icon: ShoppingBag, 
-    href: '/admin/pedidos',
-    children: [
-      { label: 'Todos', href: '/admin/pedidos' },
-      { label: 'Nuevos', href: '/admin/pedidos?estado=new' },
-      { label: 'En preparación', href: '/admin/pedidos?estado=preparing' },
-      { label: 'Listos', href: '/admin/pedidos?estado=ready' },
-      { label: 'Historial', href: '/admin/pedidos?estado=history' },
-    ]
-  },
-  { 
-    label: 'Productos', 
-    icon: Package, 
-    href: '/admin/productos',
-    children: [
-      { label: 'Todos', href: '/admin/productos' },
-      { label: 'Panes', href: '/admin/productos?categoria=Panes' },
-      { label: 'Facturas', href: '/admin/productos?categoria=Facturas' },
-      { label: 'Dulces', href: '/admin/productos?categoria=Dulces' },
-      { label: 'Salados', href: '/admin/productos?categoria=Salados' },
-      { label: 'Bocados calientes', href: '/admin/productos?categoria=Bocados calientes' },
-    ]
-  },
-  { href: '/admin/destacados', label: 'Destacados', icon: Star },
-  { href: '/admin/lunch', label: 'Lunch & Eventos', icon: Sandwich },
-]
+import { ADMIN_NAV, titleForPath } from '@/lib/constants/nav'
 
 const woodSidebar = {
   backgroundImage:
@@ -51,7 +30,7 @@ const woodSidebar = {
 }
 
 const woodMain = {
-  backgroundColor: '#150604',
+  backgroundColor: 'var(--color-ink-950)',
   backgroundImage:
     "radial-gradient(circle at 15% 8%, rgba(201,169,110,.09), transparent 55%), radial-gradient(circle at 85% 92%, rgba(90,26,16,.22), transparent 60%), linear-gradient(rgba(10,3,1,.88), rgba(10,3,1,.92)), url('/images/textura-madera.png')",
   backgroundSize: 'cover, cover, cover, cover',
@@ -68,7 +47,13 @@ const topbarStyle = {
 
 export default function AdminLayout({ children }) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#150604] flex items-center justify-center text-white">Cargando panel...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-ink-950 text-sm text-white/50">
+          Cargando panel…
+        </div>
+      }
+    >
       <AdminLayoutContent>{children}</AdminLayoutContent>
     </Suspense>
   )
@@ -80,22 +65,29 @@ function AdminLayoutContent({ children }) {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [today, setToday] = useState('')
+  // Sólo guarda overrides explícitos del usuario; si no hay, el grupo se abre
+  // según la ruta (estado derivado, sin efecto).
   const [openMenus, setOpenMenus] = useState({})
 
+  const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname
+
+  // La fecha se calcula en el cliente: la del servidor puede estar en otra zona
+  // horaria y romper la hidratación. Se difiere un tick para no bloquear el
+  // primer render.
   useEffect(() => {
-    setToday(
-      new Date().toLocaleDateString('es-AR', {
-        weekday: 'long', day: '2-digit', month: 'long',
-      })
-    )
+    const id = setTimeout(() => {
+      setToday(
+        new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })
+      )
+    }, 0)
+    return () => clearTimeout(id)
   }, [])
 
-  useEffect(() => { setSidebarOpen(false) }, [pathname, searchParams])
-
-  useEffect(() => {
-    if (pathname.startsWith('/admin/pedidos')) setOpenMenus(prev => ({ ...prev, 'Pedidos': true }))
-    if (pathname.startsWith('/admin/productos')) setOpenMenus(prev => ({ ...prev, 'Productos': true }))
-  }, [pathname])
+  const activeGroup = pathname.startsWith('/admin/pedidos')
+    ? 'Pedidos'
+    : pathname.startsWith('/admin/productos')
+      ? 'Productos'
+      : null
 
   if (pathname === '/admin/login') {
     return (
@@ -106,191 +98,248 @@ function AdminLayoutContent({ children }) {
     )
   }
 
-  const handleLogout = async () => {
+  async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/admin/login')
     router.refresh()
   }
 
-  const toggleMenu = (label) => {
-    setOpenMenus(prev => ({ ...prev, [label]: !prev[label] }))
-  }
-
-  const isLinkActive = (href) => {
+  const isActive = (href) => {
+    if (!href) return false
     if (href === '/admin') return pathname === '/admin'
-    const currentUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '')
-    return currentUrl === href || (href === pathname && !searchParams.toString())
+    const [path, query] = href.split('?')
+    if (pathname !== path) return false
+    return query ? currentUrl === href : !searchParams.toString()
   }
 
   return (
-    <div className="min-h-screen flex text-[#F5EDE3]" style={woodMain}>
+    <div className="admin-scope flex min-h-screen text-cream" style={woodMain}>
       {sidebarOpen && (
-        <div
+        <button
+          type="button"
+          aria-label="Cerrar menú"
           onClick={() => setSidebarOpen(false)}
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm md:hidden"
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`w-72 flex flex-col fixed inset-y-0 left-0 border-r border-white/10 z-40 shadow-2xl transition-transform duration-300 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-white/10 shadow-2xl transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={woodSidebar}
+        aria-label="Navegación del panel"
       >
-        {/* Logo más grande, sin el texto "PANEL" */}
-        <div className="px-5 py-6 border-b border-white/10 flex items-start justify-between gap-2 shrink-0">
+        <div className="flex shrink-0 items-start justify-between gap-2 border-b border-white/10 px-5 py-5">
           <Link href="/admin" className="block flex-1">
             <Image
-              src="/images/logo-biarritz-blanco.png"
+              src="/images/logo-biarritz-blanco-trim.png"
               alt="Biarritz"
-              width={340}
-              height={120}
+              width={356}
+              height={134}
               priority
-              className="w-full h-auto max-h-32 object-contain mix-blend-screen"
+              className="h-12 w-auto"
             />
           </Link>
           <button
+            type="button"
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 text-white/60 hover:text-white shrink-0 mt-1"
+            aria-label="Cerrar menú"
+            className="mt-1 shrink-0 rounded-md p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white md:hidden"
           >
-            <X size={20} />
+            <X size={18} aria-hidden />
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
-          {NAV_LINKS.map((link) => {
-            const Icon = link.icon
-            const hasChildren = link.children && link.children.length > 0
-            const isOpen = openMenus[link.label]
-            const isChildActive = hasChildren && link.children.some(child => isLinkActive(child.href))
-            const isParentActive = hasChildren ? isChildActive : isLinkActive(link.href)
+        <nav className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-3 py-4">
+          {ADMIN_NAV.map((section) => (
+            <div key={section.group}>
+              <p className="mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-gold-soft/50">
+                {section.group}
+              </p>
 
-            return (
-              <div key={link.label} className="mb-1">
-                {hasChildren ? (
-                  <button
-                    onClick={() => toggleMenu(link.label)}
-                    className={`w-full group flex items-center justify-between px-3.5 py-2.5 rounded-lg transition-all duration-200 border ${
-                      isParentActive || isOpen
-                        ? 'bg-white/10 border-white/20 text-white'
-                        : 'border-transparent text-white/70 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon size={17} className={isParentActive ? 'text-[#E0C89A]' : ''} />
-                      <span className="font-medium text-sm">{link.label}</span>
-                    </div>
-                    <ChevronDown 
-                      size={15} 
-                      className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#E0C89A]' : 'text-white/40'}`} 
-                    />
-                  </button>
-                ) : (
-                  <Link
-                    href={link.href}
-                    className={`group flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-all duration-200 border ${
-                      isParentActive
-                        ? 'bg-gradient-to-r from-[#E0C89A]/25 to-[#E0C89A]/10 border-[#E0C89A]/40 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15)]'
-                        : 'border-transparent text-white/70 hover:bg-white/8 hover:text-white hover:border-white/10'
-                    }`}
-                  >
-                    <Icon size={17} className={isParentActive ? 'text-[#E0C89A]' : 'group-hover:text-[#E0C89A] transition'} />
-                    <span className="font-medium text-sm">{link.label}</span>
-                  </Link>
-                )}
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const Icon = item.icon
+                  const hasChildren = item.children?.length > 0
+                  const isOpen = openMenus[item.label] ?? activeGroup === item.label
+                  const childActive = hasChildren && item.children.some((c) => isActive(c.href))
+                  const selfActive = isActive(item.href)
+                  const active = hasChildren ? childActive || selfActive : selfActive
 
-                {hasChildren && (
-                  <div 
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isOpen ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0'
-                    }`}
-                  >
-                    <div className="pl-10 pr-2 py-1 space-y-0.5 border-l border-white/10 ml-5">
-                      {link.children.map((child) => {
-                        const childActive = isLinkActive(child.href)
-                        return (
-                          <Link
-                            key={child.label}
-                            href={child.href}
-                            className={`block px-3 py-1.5 rounded-md text-xs transition-colors ${
-                              childActive
-                                ? 'text-[#E0C89A] font-semibold bg-white/5'
-                                : 'text-white/50 hover:text-white hover:bg-white/5'
+                  // Próximamente: se muestra, pero no navega a un 404.
+                  if (item.soon) {
+                    return (
+                      <div
+                        key={item.label}
+                        className="flex items-center justify-between gap-2 rounded-field px-3 py-2 text-sm text-white/35"
+                        title="Próximamente"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <Icon size={16} aria-hidden />
+                          {item.label}
+                        </span>
+                        <span className="rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] uppercase tracking-wider">
+                          Pronto
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div key={item.label}>
+                      {hasChildren ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenMenus((prev) => ({ ...prev, [item.label]: !isOpen }))
+                          }
+                          aria-expanded={Boolean(isOpen)}
+                          className={`flex w-full items-center justify-between rounded-field border px-3 py-2 text-sm transition ${
+                            active || isOpen
+                              ? 'border-white/15 bg-white/10 text-white'
+                              : 'border-transparent text-white/65 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <Icon
+                              size={16}
+                              aria-hidden
+                              className={active ? 'text-gold-soft' : ''}
+                            />
+                            <span className="font-medium">{item.label}</span>
+                          </span>
+                          <ChevronDown
+                            size={14}
+                            aria-hidden
+                            className={`transition-transform duration-300 ${
+                              isOpen ? 'rotate-180 text-gold-soft' : 'text-white/35'
                             }`}
-                          >
-                            {child.label}
-                          </Link>
-                        )
-                      })}
+                          />
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => setSidebarOpen(false)}
+                          aria-current={active ? 'page' : undefined}
+                          className={`group flex items-center gap-2.5 rounded-field border px-3 py-2 text-sm transition ${
+                            active
+                              ? 'border-gold/35 bg-gradient-to-r from-gold-soft/20 to-transparent font-semibold text-white'
+                              : 'border-transparent text-white/65 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <Icon
+                            size={16}
+                            aria-hidden
+                            className={
+                              active
+                                ? 'text-gold-soft'
+                                : 'transition group-hover:text-gold-soft'
+                            }
+                          />
+                          {item.label}
+                        </Link>
+                      )}
+
+                      {hasChildren && (
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            isOpen ? 'mt-1 max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                          }`}
+                        >
+                          <div className="ml-4 space-y-0.5 border-l border-white/10 py-1 pl-3">
+                            {item.children.map((child) => {
+                              const activeChild = isActive(child.href)
+                              return (
+                                <Link
+                                  key={child.label}
+                                  href={child.href}
+                                  onClick={() => setSidebarOpen(false)}
+                                  aria-current={activeChild ? 'page' : undefined}
+                                  className={`block rounded-md px-2.5 py-1.5 text-xs transition ${
+                                    activeChild
+                                      ? 'bg-white/8 font-semibold text-gold-soft'
+                                      : 'text-white/45 hover:bg-white/5 hover:text-white'
+                                  }`}
+                                >
+                                  {child.label}
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  )
+                })}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </nav>
 
-        <div className="p-4 border-t border-white/10 space-y-1 shrink-0">
+        <div className="shrink-0 space-y-0.5 border-t border-white/10 p-3">
           <Link
             href="/"
-            className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-white/70 hover:bg-white/8 hover:text-white transition text-sm"
+            className="flex items-center gap-2.5 rounded-field px-3 py-2 text-sm text-white/65 transition hover:bg-white/8 hover:text-white"
           >
-            <Home size={16} />
+            <Home size={16} aria-hidden />
             <span className="font-medium">Ver tienda</span>
           </Link>
           <button
+            type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-white/70 hover:bg-red-500/15 hover:text-red-200 transition text-sm"
+            className="flex w-full items-center gap-2.5 rounded-field px-3 py-2 text-sm text-white/65 transition hover:bg-red-500/15 hover:text-red-200"
           >
-            <LogOut size={16} />
+            <LogOut size={16} aria-hidden />
             <span className="font-medium">Cerrar sesión</span>
           </button>
         </div>
       </aside>
 
-      <div className="flex-1 min-w-0 w-full overflow-hidden md:ml-72 flex flex-col min-h-screen">
+      <div className="flex min-h-screen w-full min-w-0 flex-col overflow-hidden md:ml-72">
         <header
-          className="sticky top-0 z-20 border-b border-white/10 backdrop-blur-xl shrink-0"
+          className="sticky top-0 z-20 shrink-0 border-b border-white/10 backdrop-blur-xl"
           style={topbarStyle}
         >
-          <div className="h-14 px-4 md:px-8 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-8">
+            <div className="flex min-w-0 items-center gap-3">
               <button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="md:hidden p-2 text-white/70 hover:text-white shrink-0"
                 aria-label="Abrir menú"
+                className="rounded-md p-2 text-white/70 transition hover:bg-white/10 hover:text-white md:hidden"
               >
-                <Menu size={20} />
+                <Menu size={18} aria-hidden />
               </button>
               <div className="min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-[#E0C89A]">Admin</p>
-                <h2 className="font-serif text-base text-white leading-tight capitalize truncate">
-                  {pathname.includes('/pedidos') ? 'Pedidos' : pathname.includes('/productos') ? 'Productos' : 'Dashboard'}
+                <p className="text-[9px] uppercase tracking-[0.2em] text-gold-soft">Admin</p>
+                <h2 className="truncate font-serif text-base leading-tight text-white">
+                  {titleForPath(pathname)}
                 </h2>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               {today && (
-                <div className="hidden sm:flex items-center gap-2 text-[11px] text-white/60 border border-white/15 bg-white/5 px-3 py-1 rounded-full">
-                  <Calendar size={11} />
+                <div className="hidden items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-3 py-1 text-[11px] text-white/55 sm:flex">
+                  <Calendar size={11} aria-hidden />
                   <span className="capitalize">{today}</span>
                 </div>
               )}
               <Link
                 href="/"
-                className="hidden sm:inline-flex items-center gap-2 text-[11px] text-white/80 hover:text-white border border-white/20 bg-white/8 px-3 py-1 rounded-full transition"
+                className="hidden items-center gap-1.5 rounded-full border border-white/15 bg-white/6 px-3 py-1 text-[11px] text-white/75 transition hover:bg-white/12 hover:text-white sm:inline-flex"
               >
-                <ExternalLink size={11} />
+                <ExternalLink size={11} aria-hidden />
                 Tienda
               </Link>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8 relative z-10 w-full max-w-full overflow-x-hidden">
+        <main className="relative z-10 w-full max-w-full flex-1 overflow-x-hidden p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>
