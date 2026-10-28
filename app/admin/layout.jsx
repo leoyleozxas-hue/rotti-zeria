@@ -135,12 +135,12 @@ function AdminLayoutContent({ children }) {
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-white/10 px-5 py-5">
           <Link href="/admin" className="block flex-1">
             <Image
-              src="/images/logo-biarritz-blanco.png"
+              src="/images/logo-biarritz-blanco-trim.png"
               alt="Biarritz"
-              width={340}
-              height={120}
+              width={356}
+              height={134}
               priority
-              className="h-auto max-h-24 w-full object-contain mix-blend-screen"
+              className="h-12 w-auto"
             />
           </Link>
           <button

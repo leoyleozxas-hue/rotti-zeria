@@ -9,7 +9,7 @@ const TONES = {
   // Madera sólida: tablas y bloques que necesitan contraste.
   solid: 'border-white/10 bg-ink-900 shadow-panel',
   // Un escalón por encima: cabeceras, bloques destacados.
-  raised: 'border-white/12 bg-ink-800 shadow-lift',
+  raised: 'border-white/18 bg-ink-800/95 shadow-lift',
   // Fondo apenas insinuado: filas, sub-bloques.
   quiet: 'border-white/8 bg-white/[0.02]',
 }

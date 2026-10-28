@@ -82,8 +82,9 @@ function ProductCard({ product, index, onDelete }) {
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-white/15">
-            <ImageOff size={26} aria-hidden />
+          <div className="flex h-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-ink-850 to-ink-950 text-white/20">
+            <ImageOff size={24} aria-hidden />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.16em]">Sin foto</span>
           </div>
         )}
 

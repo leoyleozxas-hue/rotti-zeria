@@ -36,12 +36,12 @@ export default function Header() {
           aria-label="Biarritz — Inicio"
         >
           <Image
-            src="/images/logo-biarritz-blanco.png"
+            src="/images/logo-biarritz-blanco-trim.png"
             alt="Biarritz"
-            width={260}
-            height={96}
+            width={356}
+            height={134}
             priority
-            className="h-14 sm:h-16 w-auto mix-blend-screen"
+            className="h-10 w-auto sm:h-11"
           />
         </Link>
 

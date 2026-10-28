@@ -70,15 +70,15 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
           <Image
-            src="/images/logo-biarritz-blanco.png"
+            src="/images/logo-biarritz-blanco-trim.png"
             alt="Biarritz"
-            width={200}
-            height={73}
+            width={356}
+            height={134}
             priority
-            className="mx-auto mb-5 h-12 w-auto mix-blend-screen"
+            className="mx-auto mb-5 h-14 w-auto"
           />
-          <h1 className="font-serif text-2xl text-white">Panel Biarritz</h1>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-gold-soft/70">
+          <h1 className="font-serif text-xl text-white">Panel de administración</h1>
+          <p className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-gold-soft/70">
             <ShieldCheck size={12} aria-hidden />
             Acceso restringido
           </p>

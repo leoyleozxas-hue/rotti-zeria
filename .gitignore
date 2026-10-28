@@ -43,3 +43,14 @@ next-env.d.ts
 # tooling local (CLI de superdesign instalado a mano + temporales de agente)
 /.tmp-superdesign-cli/
 /.tmp-*/
+*.log
+
+# ==========================================
+# Carpetas y archivos generados por IA / Herramientas
+# ==========================================
+.agents/
+.capturas/
+.superdesign/
+.tools/
+AUDITORIA-FRONT.md
+REVISION-2026-10-25.md

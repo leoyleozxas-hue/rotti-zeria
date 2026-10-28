@@ -6,11 +6,11 @@
 
 export function fieldClass(hasError = false) {
   return [
-    'h-11 w-full rounded-field border bg-white/[0.04] px-3.5 text-sm text-white',
-    'placeholder:text-white/25 transition',
+    'h-11 w-full rounded-field border border-white/15 bg-black/30 px-3.5 text-sm text-white',
+    'placeholder:text-white/30 transition shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)]',
     hasError
       ? 'border-red-500/60 focus:border-red-400'
-      : 'border-white/12 hover:border-white/20 focus:border-gold/60',
+      : 'hover:border-white/25 focus:border-gold/70 focus:bg-black/40',
   ].join(' ')
 }
 

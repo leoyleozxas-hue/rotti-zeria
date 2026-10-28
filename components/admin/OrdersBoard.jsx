@@ -177,12 +177,12 @@ export default function OrdersBoard({ initialOrders = [] }) {
           })}
         </div>
 
-        <div className="md:hidden">
+        <div className="relative md:hidden">
           <select
             value={tab}
             onChange={(e) => changeTab(e.target.value)}
             aria-label="Filtrar pedidos por estado"
-            className="h-10 w-full appearance-none rounded-field border border-white/12 bg-ink-950/70 px-3 text-sm text-cream"
+            className="h-10 w-full appearance-none rounded-field border border-white/12 bg-ink-950/70 pl-3 pr-9 text-sm text-cream"
           >
             {ORDER_TABS.map((t) => (
               <option key={t.value} value={t.value} className="bg-ink-900">
@@ -190,6 +190,11 @@ export default function OrdersBoard({ initialOrders = [] }) {
               </option>
             ))}
           </select>
+          <ChevronDown
+            size={14}
+            aria-hidden
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
+          />
         </div>
       </div>
 
@@ -328,7 +333,7 @@ function OrderCard({ order, index, busy, expanded, onToggleItems, onAdvance, onC
               <span suppressHydrationWarning>{formatDate(order.created_at)}</span>
             </p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <StatusBadge status={order.status} />
             {isOpenOrder(order.status) && (
               <IconButton
@@ -336,9 +341,9 @@ function OrderCard({ order, index, busy, expanded, onToggleItems, onAdvance, onC
                 variant="ghost"
                 size="iconSm"
                 onClick={onCancel}
-                className="text-white/30 hover:text-red-300"
+                className="rounded-full border border-white/10 bg-ink-950/60 text-white/45 backdrop-blur hover:border-red-500/40 hover:bg-red-500/20 hover:text-red-200"
               >
-                <X size={13} aria-hidden />
+                <X size={12} aria-hidden />
               </IconButton>
             )}
           </div>
