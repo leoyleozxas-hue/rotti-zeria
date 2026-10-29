@@ -29,7 +29,7 @@ export default async function ExitoPage({ searchParams }) {
             </div>
             <div className="flex justify-between border-b border-chocolate/10 pb-2">
               <span>Titular</span>
-              <strong className="text-chocolate">Panadería Biarritz</strong>
+              <strong className="text-chocolate">Panadería ${SITE_CONFIG.businessName}</strong>
             </div>
             <div className="flex justify-between border-b border-chocolate/10 pb-2">
               <span>Cuenta</span>
@@ -41,7 +41,7 @@ export default async function ExitoPage({ searchParams }) {
             </div>
             <div className="flex justify-between">
               <span>Alias</span>
-              <strong className="text-chocolate">BIARRITZ.PAN</strong>
+              <strong className="text-chocolate">${SITE_CONFIG.bank.alias}</strong>
             </div>
           </div>
         </div>

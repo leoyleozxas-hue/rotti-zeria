@@ -6,7 +6,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, ShieldCheck } from 'lucide-react'
@@ -14,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import Panel from '@/components/ui/panel'
 import Field, { FormMessage, fieldClass } from '@/components/ui/field'
 import { Button } from '@/components/ui/button'
+import SiteLogo from '@/components/SiteLogo'
 
 const woodBg = {
   backgroundImage:
@@ -69,14 +69,7 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <Image
-            src="/images/logo-biarritz-blanco-trim.png"
-            alt="Biarritz"
-            width={356}
-            height={134}
-            priority
-            className="mx-auto mb-5 h-14 w-auto"
-          />
+          <SiteLogo variant="light" className="items-center mb-5" />
           <h1 className="font-serif text-xl text-white">Panel de administración</h1>
           <p className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-gold-soft/70">
             <ShieldCheck size={12} aria-hidden />
@@ -95,7 +88,7 @@ export default function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@biarritz.com"
+                  placeholder="admin@rotti-zeria.com"
                   className={fieldClass(hasError)}
                 />
               )}

@@ -1,19 +1,12 @@
 // app/admin/preview/page.jsx
-//
-// Banco de pruebas visual, SÓLO DESARROLLO. Renderiza las pantallas del panel
-// con datos de mentira, sin sesión, para poder revisar diseño y responsive sin
-// tocar la base ni ensuciar el panel real.
-//
-// En producción esta ruta no existe (devuelve 404) y `proxy.js` tampoco la deja
-// pasar. Para borrarla: eliminá esta carpeta y el bloque de preview en proxy.js.
-
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import OrdersBoard from '@/components/admin/OrdersBoard'
 import ProductsTable from '@/components/admin/ProductsTable'
 import { FIXTURE_ORDERS, FIXTURE_PRODUCTS } from './fixtures'
+import { SITE_CONFIG } from '@/lib/config'
 
-export const metadata = { title: 'Preview · Panel Biarritz' }
+export const metadata = { title: `Preview · Panel ${SITE_CONFIG.businessName}` }
 
 export default function PreviewPage() {
   if (process.env.NODE_ENV === 'production') notFound()
@@ -31,9 +24,7 @@ export default function PreviewPage() {
 
       <section className="space-y-5">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-soft">
-            Operación
-          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-soft">Operación</p>
           <h1 className="font-serif text-3xl text-white md:text-4xl">Pedidos</h1>
         </div>
         <Suspense fallback={<p className="text-sm text-white/40">Cargando tablero…</p>}>
@@ -43,9 +34,7 @@ export default function PreviewPage() {
 
       <section className="space-y-5">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-soft">
-            Catálogo
-          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-soft">Catálogo</p>
           <h1 className="font-serif text-3xl text-white md:text-4xl">Productos</h1>
         </div>
         <ProductsTable products={FIXTURE_PRODUCTS} />

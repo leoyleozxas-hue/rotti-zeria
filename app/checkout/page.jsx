@@ -10,6 +10,7 @@ import { ChevronRight, ChevronLeft, Loader2, CheckCircle2, Copy, Check, MessageC
 import { useCartStore } from '@/lib/store/cartStore'
 import { orderSchema } from '@/lib/validations/order'
 import { toast } from 'sonner'
+import { SITE_CONFIG } from '@/lib/config'
 
 function getMinDate() {
   const d = new Date()
@@ -110,78 +111,75 @@ export default function CheckoutPage() {
 
       {/* ── ÉXITO ── */}
       {step === 4 && orderResult && (
-        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl border border-[#EADFC8] text-center anim-rise">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={40} className="text-emerald-600" />
-          </div>
-          <h1 className="font-serif text-4xl text-[#2B0F0B] mb-2">¡Pedido confirmado!</h1>
-          <p className="text-[#6b3a2c] mb-6">
-            Tu número de pedido es{' '}
-            <strong className="text-[#2B0F0B] text-lg font-mono">{orderResult.order_number}</strong>
-          </p>
+      <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl border border-[#EADFC8] text-center anim-rise">
+        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle2 size={40} className="text-emerald-600" />
+        </div>
+        <h1 className="font-serif text-4xl text-[#2B0F0B] mb-2">¡Pedido confirmado!</h1>
+        <p className="text-[#6b3a2c] mb-6">
+          Tu número de pedido es{' '}
+          <strong className="text-[#2B0F0B] text-lg font-mono">{orderResult.order_number}</strong>
+        </p>
 
-          <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#EADFC8] text-left mb-8">
-            <h3 className="font-serif text-lg text-[#2B0F0B] mb-4 flex items-center gap-2">
-              <CreditCard size={18} className="text-[#C9A96E]" /> Datos para transferir
-            </h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
-                <span className="text-[#9a8b7a]">Banco</span>
-                <span className="font-medium text-[#2B0F0B]">Banco Ejemplo</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
-                <span className="text-[#9a8b7a]">Titular</span>
-                <span className="font-medium text-[#2B0F0B]">Panadería Biarritz</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
-                <span className="text-[#9a8b7a]">Alias</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-[#2B0F0B]">BIARRITZ.PAN</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard('BIARRITZ.PAN', 'alias')}
-                    className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
-                    aria-label="Copiar alias"
-                  >
-                    {copiedField === 'alias' ? <Check size={14} /> : <Copy size={14} />}
-                  </button>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[#9a8b7a]">CBU</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-[#2B0F0B] font-mono text-xs">0000003100000000000000</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard('0000003100000000000000', 'cbu')}
-                    className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
-                    aria-label="Copiar CBU"
-                  >
-                    {copiedField === 'cbu' ? <Check size={14} /> : <Copy size={14} />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <a
-              href={`https://wa.me/5491112345678?text=Hola!%20Acabo%20de%20hacer%20el%20pedido%20%23${orderResult.order_number}%20y%20quiero%20enviar%20el%20comprobante%20de%20transferencia.`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-xl font-bold hover:bg-[#1eb356] transition shadow-lg"
+    <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#EADFC8] text-left mb-8">
+      <h3 className="font-serif text-lg text-[#2B0F0B] mb-4 flex items-center gap-2">
+        <CreditCard size={18} className="text-[#C9A96E]" /> Datos para transferir
+      </h3>
+      <div className="space-y-3 text-sm">
+        <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
+          <span className="text-[#9a8b7a]">Banco</span>
+          <span className="font-medium text-[#2B0F0B]">{SITE_CONFIG.bank.name}</span>
+        </div>
+        <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
+          <span className="text-[#9a8b7a]">Titular</span>
+          <span className="font-medium text-[#2B0F0B]">{SITE_CONFIG.bank.holder}</span>
+        </div>
+        <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
+          <span className="text-[#9a8b7a]">Alias</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-[#2B0F0B]">{SITE_CONFIG.bank.alias}</span>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(SITE_CONFIG.bank.alias, 'alias')}
+              className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
+              aria-label="Copiar alias"
             >
-              <MessageCircle size={20} /> Enviar comprobante por WhatsApp
-            </a>
-            <Link
-              href="/"
-              className="block w-full py-3 text-sm text-[#6b3a2c] hover:text-[#2B0F0B] transition"
-            >
-              Volver al inicio
-            </Link>
+              {copiedField === 'alias' ? <Check size={14} /> : <Copy size={14} />}
+            </button>
           </div>
         </div>
-      )}
+        <div className="flex justify-between items-center">
+          <span className="text-[#9a8b7a]">CBU</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-[#2B0F0B] font-mono text-xs">{SITE_CONFIG.bank.cbu}</span>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(SITE_CONFIG.bank.cbu, 'cbu')}
+              className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
+              aria-label="Copiar CBU"
+            >
+              {copiedField === 'cbu' ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-3">
+      <a
+        href={`https://wa.me/${SITE_CONFIG.whatsapp}?text=${encodeURIComponent(`Hola! Acabo de hacer el pedido #${orderResult.order_number} y quiero enviar el comprobante de transferencia.`)}`}
+        target="_blank"
+        rel="noreferrer"
+        className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-xl font-bold hover:bg-[#1eb356] transition shadow-lg"
+      >
+        <MessageCircle size={20} /> Enviar comprobante por WhatsApp
+      </a>
+      <Link href="/" className="block w-full py-3 text-sm text-[#6b3a2c] hover:text-[#2B0F0B] transition">
+        Volver al inicio
+      </Link>
+    </div>
+  </div>
+)}
 
       {/* ── FORMULARIO ── */}
       {step < 4 && (

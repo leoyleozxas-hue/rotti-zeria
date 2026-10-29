@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowRight, Users, Cake, Briefcase, UtensilsCrossed } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/config'
 
 const SERVICIOS = [
   { icon: Briefcase, title: 'Coffee break & oficina', desc: 'Facturas, medialunas, jugos y bandejas para reuniones de trabajo.' },
@@ -12,8 +13,7 @@ const SERVICIOS = [
 
 export default async function LunchEventosPage() {
   const supabase = await createClient()
-  
-  // Buscamos los combos de tipo "Lunch"
+
   const { data: lunches } = await supabase
     .from('products')
     .select('*')
@@ -21,7 +21,6 @@ export default async function LunchEventosPage() {
     .eq('lunch_type', 'Lunch')
     .eq('is_available', true)
 
-  // Buscamos los servicios de tipo "Evento"
   const { data: eventos } = await supabase
     .from('products')
     .select('*')
@@ -34,7 +33,7 @@ export default async function LunchEventosPage() {
       {/* Hero Partido */}
       <section className="relative -mt-[4.25rem] pt-[4.25rem] bg-[#150604] overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch min-h-[60vh]">
-          
+
           <div className="w-full md:w-1/2 p-8 md:p-16 relative z-10 flex flex-col justify-center">
             <span className="text-[#E0C89A] text-xs uppercase tracking-[0.3em] font-bold mb-4 block">
               Catering & Eventos
@@ -89,7 +88,7 @@ export default async function LunchEventosPage() {
         </div>
       </section>
 
-      {/* Combos de Lunch (Si hay) */}
+      {/* Combos de Lunch */}
       {lunches && lunches.length > 0 && (
         <section className="max-w-5xl mx-auto px-4 pb-20">
           <div className="text-center mb-12">
@@ -116,7 +115,7 @@ export default async function LunchEventosPage() {
         </section>
       )}
 
-      {/* Servicios de Eventos (Si hay) */}
+      {/* Servicios de Eventos */}
       {eventos && eventos.length > 0 && (
         <section className="max-w-5xl mx-auto px-4 pb-20">
           <div className="text-center mb-12">

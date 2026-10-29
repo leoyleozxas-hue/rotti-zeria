@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
 import { ArrowRight, Clock, MapPin, Wheat } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/config'
 
 const woodVertical = {
   backgroundImage:
@@ -70,7 +71,7 @@ const CATEGORIES = [
 export default function Home() {
   return (
     <>
-      {/* HERO — foto producto full-bleed + madera */}
+      {/* HERO */}
       <section className="relative min-h-[100svh] flex items-end md:items-center text-white overflow-hidden -mt-[4.25rem]">
         <Image
           src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1920&q=85"
@@ -80,7 +81,6 @@ export default function Home() {
           className="object-cover object-center animate-hero-zoom"
           sizes="100vw"
         />
-        {/* Textura madera encima de la foto */}
         <div
           aria-hidden
           className="absolute inset-0 mix-blend-multiply opacity-70"
@@ -97,7 +97,7 @@ export default function Home() {
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 pt-28 pb-16 md:pt-32 md:pb-24 animate-hero-rise">
           <p className="text-[#E0C89A] text-sm tracking-[0.2em] uppercase mb-4">
-            Biarritz · desde 1935
+            {SITE_CONFIG.businessName} · desde {SITE_CONFIG.since}
           </p>
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl leading-[1.1] mb-4 max-w-2xl text-white">
             Facturas, panes y delicias recién horneadas
@@ -123,16 +123,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BARRA DE INFO — madera */}
+      {/* BARRA DE INFO */}
       <section style={woodVertical} className="text-[#F5EDE3]">
         <div className="max-w-6xl mx-auto px-4 py-7 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
           <div className="flex items-center gap-3">
             <Clock size={20} className="text-[#E0C89A] shrink-0" />
-            <span>Lun a Sáb · 7:00 a 20:00</span>
+            <span>{SITE_CONFIG.hours.weekdays}</span>
           </div>
           <div className="flex items-center gap-3">
             <MapPin size={20} className="text-[#E0C89A] shrink-0" />
-            <span>Av. Siempre Viva 123</span>
+            <span>{SITE_CONFIG.address}</span>
           </div>
           <div className="flex items-center gap-3">
             <Wheat size={20} className="text-[#E0C89A] shrink-0" />
@@ -177,7 +177,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* DESTACADOS — madera como el footer */}
+      {/* DESTACADOS */}
       <section style={woodHorizontal} className="py-20 text-[#F5EDE3]">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12 gap-4">
@@ -219,10 +219,10 @@ export default function Home() {
         </div>
         <div className="order-1 md:order-2">
           <h2 className="font-serif text-4xl md:text-5xl text-[#3a130d] mb-6">
-            Casi 90 años<br />amasando lo mismo
+            Hecho a mano<br />todos los días
           </h2>
           <p className="text-[#6b3a2c] mb-4 max-w-prose">
-            En Biarritz creemos que el pan es un acto de paciencia. Fermentamos lento,
+            En {SITE_CONFIG.businessName} creemos que el pan es un acto de paciencia. Fermentamos lento,
             horneamos temprano y tratamos cada pieza como si fuera para nuestra propia mesa.
           </p>
           <p className="text-[#6b3a2c] mb-8 max-w-prose">
@@ -237,7 +237,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA EVENTOS — madera */}
+      {/* CTA EVENTOS */}
       <section style={woodHorizontal} className="text-white">
         <div className="max-w-4xl mx-auto px-4 py-20 text-center">
           <h2 className="font-serif text-4xl md:text-5xl mb-5">

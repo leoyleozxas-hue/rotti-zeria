@@ -19,6 +19,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Toaster } from 'sonner'
 import { ADMIN_NAV, titleForPath } from '@/lib/constants/nav'
 import { useNotificationStore } from '@/lib/store/notificationStore'
+import SiteLogo from '@/components/SiteLogo'
 
 const SIDEBAR_WIDTH = 288 // px (equivale a w-72)
 
@@ -214,14 +215,7 @@ function AdminLayoutContent({ children }) {
       >
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-white/10 px-5 py-5">
           <Link href="/admin" className="block flex-1">
-            <Image
-              src="/images/logo-biarritz-blanco-trim.png"
-              alt="Biarritz"
-              width={356}
-              height={134}
-              priority
-              className="h-12 w-auto"
-            />
+            <SiteLogo variant="light" />
           </Link>
           <button
             type="button"

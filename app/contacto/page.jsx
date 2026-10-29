@@ -4,12 +4,13 @@
 import { useState } from 'react'
 import { Clock, MapPin, Phone, Mail, Send, CheckCircle2, Loader2, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { SITE_CONFIG } from '@/lib/config'
 
 const INFO = [
-  { icon: MapPin, label: 'Dirección', value: 'Av. Siempre Viva 123' },
-  { icon: Clock, label: 'Horario', value: 'Lun a Sáb · 7:00 a 20:00' },
-  { icon: Phone, label: 'Teléfono', value: '+598 00 000 000' },
-  { icon: Mail, label: 'Email', value: 'hola@biarritz.com' },
+  { icon: MapPin, label: 'Dirección', value: SITE_CONFIG.address },
+  { icon: Clock, label: 'Horario', value: SITE_CONFIG.hours.weekdays },
+  { icon: Phone, label: 'Teléfono', value: SITE_CONFIG.phoneDisplay },
+  { icon: Mail, label: 'Email', value: SITE_CONFIG.email },
 ]
 
 const fieldClass = "w-full rounded-xl border border-[#EADFC8] bg-white px-4 py-3 text-[#2B0F0B] placeholder:text-[#9a8b7a]/60 focus:outline-none focus:border-[#C9A96E] focus:ring-2 focus:ring-[#C9A96E]/20 transition"
@@ -79,7 +80,7 @@ export default function ContactoPage() {
           >
             <div className="relative z-10">
               <span className="text-[#E0C89A] text-[10px] uppercase tracking-[0.3em] font-bold block mb-3">
-                Biarritz · desde 1935
+                {SITE_CONFIG.businessName} · desde {SITE_CONFIG.since}
               </span>
               <h2 className="font-serif text-3xl md:text-4xl leading-tight mb-6 text-white">
                 Estamos para<br />

@@ -3,13 +3,13 @@ import { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Clock, Wheat, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Clock, Wheat } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { SITE_CONFIG } from '@/lib/config'
 import AddToCartSection from '@/components/AddToCartSection'
 import ProductCard from '@/components/ProductCard'
 import ShareButtons from '@/components/ShareButtons'
 
-// Filtro CSS para que las fotos de Unsplash parezcan de estudio
 const imageFilter = "contrast-[1.05] saturate-[1.1] brightness-[0.98]"
 
 async function ProductInfo({ id }) {
@@ -24,8 +24,6 @@ async function ProductInfo({ id }) {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#FAF7F2]">
-      
-      {/* Mitad Izquierda: Foto Inmensa */}
       <div className="w-full lg:w-3/5 relative min-h-[50vh] lg:min-h-screen bg-[#EADFC8]">
         {product.image_url ? (
           <Image
@@ -41,8 +39,7 @@ async function ProductInfo({ id }) {
             Sin imagen
           </div>
         )}
-        
-        {/* Botón Volver flotante sobre la foto */}
+
         <Link
           href="/productos"
           className="absolute top-6 left-6 z-10 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md text-[#2B0F0B] px-5 py-2.5 rounded-full text-sm font-medium hover:bg-white transition shadow-lg"
@@ -51,17 +48,15 @@ async function ProductInfo({ id }) {
         </Link>
       </div>
 
-      {/* Mitad Derecha: Información estilo Editorial */}
       <div className="w-full lg:w-2/5 flex flex-col justify-center px-8 py-16 lg:px-20 lg:py-24">
-        
         <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#9a8b7a] mb-6 block">
           {product.category}
         </span>
-        
+
         <h1 className="font-serif text-5xl lg:text-7xl text-[#2B0F0B] leading-[1.05] mb-6">
           {product.name}
         </h1>
-        
+
         <p className="text-lg text-gray-600 font-light leading-relaxed mb-10 max-w-md">
           {product.description}
         </p>
@@ -76,15 +71,13 @@ async function ProductInfo({ id }) {
           <AddToCartSection product={product} />
         </div>
 
-        {/* Compartir en redes */}
         <div className="mt-8 pt-6 border-t border-[#EADFC8]">
-          <ShareButtons 
-            productName={product.name} 
-            url={`https://biarritz.uy/productos/${product.id}`}
+          <ShareButtons
+            productName={product.name}
+            url={`${SITE_CONFIG.siteUrl}/productos/${product.id}`}
           />
         </div>
 
-        {/* Sellos de calidad */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 pt-8 border-t border-[#EADFC8]">
           <div className="flex items-start gap-3">
             <Wheat size={20} className="text-[#C9A96E] shrink-0 mt-0.5" />
@@ -101,13 +94,11 @@ async function ProductInfo({ id }) {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   )
 }
 
-// Sección de relacionados con scroll horizontal
 async function RelatedProducts({ category, excludeId }) {
   const supabase = await createClient()
   const { data: products } = await supabase
@@ -132,11 +123,14 @@ async function RelatedProducts({ category, excludeId }) {
               También de {category}
             </h2>
           </div>
-          <Link href={`/productos?categoria=${encodeURIComponent(category)}`} className="hidden md:block text-sm font-medium text-[#2B0F0B] border-b border-[#2B0F0B] pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition">
+          <Link
+            href={`/productos?categoria=${encodeURIComponent(category)}`}
+            className="hidden md:block text-sm font-medium text-[#2B0F0B] border-b border-[#2B0F0B] pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition"
+          >
             Ver todos
           </Link>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((p) => (
             <ProductCard key={p.id} product={p} />
@@ -156,10 +150,10 @@ export async function generateMetadata({ params }) {
     .eq('id', id)
     .single()
 
-  if (!product) return { title: 'Producto no encontrado | Biarritz' }
+  if (!product) return { title: 'Producto no encontrado' }
 
   return {
-    title: `${product.name} | Biarritz`,
+    title: product.name,
     description: product.description,
   }
 }
@@ -176,7 +170,7 @@ export default async function ProductDetailPage({ params }) {
   return (
     <main>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#2B0F0B]">Cargando...</div>}>
-        <ProductInfo id={id} /> 
+        <ProductInfo id={id} />
       </Suspense>
 
       {product && (

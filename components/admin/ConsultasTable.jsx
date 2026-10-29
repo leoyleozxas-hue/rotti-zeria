@@ -3,9 +3,10 @@
 
 import { useState, useMemo, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Phone, MessageSquare, Loader2, Check, Eye, Clock } from 'lucide-react'
+import { Mail, MessageSquare, Loader2, Check, Eye, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { SITE_CONFIG } from '@/lib/config'
 
 const STATUS_CONFIG = {
   new: { label: 'Nueva', color: 'bg-amber-400/20 text-amber-100 border-amber-300/40', icon: MessageSquare },
@@ -13,14 +14,12 @@ const STATUS_CONFIG = {
   completed: { label: 'Atendida', color: 'bg-emerald-400/20 text-emerald-100 border-emerald-300/40', icon: Check },
 }
 
-// Buscá esta constante en tu OrdersBoard.jsx y cambiala por esta:
+// ✅ TABS correctas para CONSULTAS
 const TABS = [
-  // "Todos" ahora significa "Todo lo que está en producción activa"
-  { value: 'all', label: 'Todos', statuses: ['pending_payment', 'payment_review', 'confirmed', 'preparing', 'ready'] },
-  { value: 'new', label: 'Nuevos', statuses: ['pending_payment', 'payment_review'] },
-  { value: 'preparing', label: 'En preparación', statuses: ['confirmed', 'preparing'] },
-  { value: 'ready', label: 'Listos', statuses: ['ready'] },
-  { value: 'history', label: 'Historial', statuses: ['delivered', 'cancelled'] },
+  { value: 'all', label: 'Todas', statuses: null },
+  { value: 'new', label: 'Nuevas', statuses: ['new'] },
+  { value: 'read', label: 'Leídas', statuses: ['read'] },
+  { value: 'completed', label: 'Atendidas', statuses: ['completed'] },
 ]
 
 function formatDate(dateString) {
@@ -47,7 +46,6 @@ export default function ConsultasTable({ consultas }) {
     setUpdatingId(id)
     const supabase = createClient()
     const { error } = await supabase.from('consultas').update({ status: newStatus }).eq('id', id)
-    
     if (error) {
       toast.error('Error al actualizar')
     } else {
@@ -59,7 +57,6 @@ export default function ConsultasTable({ consultas }) {
 
   return (
     <div className="space-y-4">
-      {/* Tabs */}
       <div className="flex flex-wrap gap-2">
         {TABS.map(t => {
           const count = t.statuses ? consultas.filter(c => t.statuses.includes(c.status)).length : consultas.length
@@ -75,15 +72,12 @@ export default function ConsultasTable({ consultas }) {
               }`}
             >
               {t.label}
-              <span className={`text-xs px-1.5 rounded-full ${active ? 'bg-black/20' : 'bg-white/10'}`}>
-                {count}
-              </span>
+              <span className={`text-xs px-1.5 rounded-full ${active ? 'bg-black/20' : 'bg-white/10'}`}>{count}</span>
             </button>
           )
         })}
       </div>
 
-      {/* Lista */}
       {filtered.length === 0 ? (
         <div className="border border-white/10 bg-white/5 rounded-2xl p-12 text-center">
           <MessageSquare className="mx-auto mb-3 text-white/30" size={32} />
@@ -128,11 +122,8 @@ export default function ConsultasTable({ consultas }) {
                   )}
                 </div>
 
-                <p className="text-sm text-white/80 whitespace-pre-wrap mb-4 leading-relaxed">
-                  {c.message}
-                </p>
+                <p className="text-sm text-white/80 whitespace-pre-wrap mb-4 leading-relaxed">{c.message}</p>
 
-                {/* Acciones */}
                 <div className="flex flex-wrap gap-2">
                   {c.status !== 'read' && (
                     <button
@@ -155,7 +146,7 @@ export default function ConsultasTable({ consultas }) {
                     </button>
                   )}
                   <a
-                    href={`mailto:${c.email}?subject=Respuesta a tu consulta - Biarritz`}
+                    href={`mailto:${c.email}?subject=${encodeURIComponent(`Respuesta a tu consulta - ${SITE_CONFIG.businessName}`)}`}
                     className="px-3 py-1.5 text-xs rounded-lg bg-[#E0C89A]/15 border border-[#E0C89A]/30 text-[#E0C89A] hover:bg-[#E0C89A]/25 transition flex items-center gap-1.5"
                   >
                     <Mail size={12} /> Responder

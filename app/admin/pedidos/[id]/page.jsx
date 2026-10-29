@@ -1,22 +1,9 @@
 // app/admin/pedidos/[id]/page.jsx
-//
-// Detalle de pedido. Esta versión reemplaza a las dos copias que existían
-// (pedidos/[id] viejo y productos/[id] por error): se queda con la mejor de las
-// dos —botón de WhatsApp, fallback de imágenes— ya restilizada con el sistema.
-
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import {
-  Calendar,
-  Clock,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-  Truck,
-  User,
-} from 'lucide-react'
+import { Calendar, Clock, Mail, MapPin, MessageCircle, Phone, Truck, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { SITE_CONFIG } from '@/lib/config'
 import OrderStatusPanel from '@/components/admin/OrderStatusPanel'
 import PrintButton from '@/components/admin/PrintButton'
 import Panel, { PanelHeader } from '@/components/ui/panel'
@@ -26,7 +13,6 @@ import { ButtonLink } from '@/components/ui/button'
 
 async function getOrder(id) {
   const supabase = await createClient()
-
   const { data: order, error } = await supabase.from('orders').select('*').eq('id', id).single()
   if (error || !order) return null
 
@@ -37,8 +23,6 @@ async function getOrder(id) {
 
   if (itemsError) return { order, items: [] }
 
-  // Los ítems guardan nombre y foto como snapshot; si vinieron vacíos se
-  // completan con el producto actual para que la cocina vea qué preparar.
   let productMap = {}
   const productIds = (items || []).map((i) => i.product_id).filter(Boolean)
   if (productIds.length) {
@@ -95,7 +79,7 @@ export default async function OrderDetailPage({ params }) {
   const cleanPhone = order.customer_phone?.replace(/\D/g, '')
   const whatsappLink = cleanPhone
     ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-        `Hola ${order.customer_name}, te escribimos de Biarritz por tu pedido ${order.order_number}.`
+        `Hola ${order.customer_name}, te escribimos de ${SITE_CONFIG.businessName} por tu pedido ${order.order_number}.`
       )}`
     : null
 
@@ -110,7 +94,6 @@ export default async function OrderDetailPage({ params }) {
         actions={<PrintButton />}
       />
 
-      {/* Ítems a preparar */}
       <Panel tone="glass" padded={false}>
         <PanelHeader
           title="Productos a preparar"
@@ -132,15 +115,11 @@ export default async function OrderDetailPage({ params }) {
 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-white">{item.display_name}</p>
-                <p className="tabular mt-0.5 text-xs text-white/45">
-                  {money(item.unit_price)} c/u
-                </p>
+                <p className="tabular mt-0.5 text-xs text-white/45">{money(item.unit_price)} c/u</p>
               </div>
 
               <div className="shrink-0 text-right">
-                <span className="tabular mr-3 text-sm font-semibold text-gold-soft">
-                  {item.quantity}×
-                </span>
+                <span className="tabular mr-3 text-sm font-semibold text-gold-soft">{item.quantity}×</span>
                 <span className="tabular font-semibold text-white">{money(item.subtotal)}</span>
               </div>
             </li>
@@ -148,16 +127,11 @@ export default async function OrderDetailPage({ params }) {
         </ul>
 
         <div className="flex items-center justify-between border-t border-gold/25 bg-gradient-to-r from-gold/10 to-transparent px-5 py-4">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">
-            Total
-          </span>
-          <span className="tabular font-serif text-2xl font-semibold text-white">
-            {money(order.total)}
-          </span>
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-gold">Total</span>
+          <span className="tabular font-serif text-2xl font-semibold text-white">{money(order.total)}</span>
         </div>
       </Panel>
 
-      {/* Cliente y entrega */}
       <div className="grid gap-4 md:grid-cols-2">
         <Panel tone="glass">
           <h2 className="mb-3 flex items-center gap-2 border-b border-white/8 pb-3 font-serif text-base text-white">

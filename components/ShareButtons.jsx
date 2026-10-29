@@ -3,12 +3,13 @@
 
 import { useState } from 'react'
 import { Link as LinkIcon, Check } from 'lucide-react'
+import { SITE_CONFIG } from '@/lib/config'
 
 export default function ShareButtons({ productName, url }) {
   const [copied, setCopied] = useState(false)
   const [copiedInstagram, setCopiedInstagram] = useState(false)
 
-  const shareText = `¡Mirá este producto de Biarritz! ${productName}`
+  const shareText = `¡Mirá este producto de ${SITE_CONFIG.businessName}! ${productName}`
   const encodedUrl = encodeURIComponent(url)
   const encodedText = encodeURIComponent(shareText)
 

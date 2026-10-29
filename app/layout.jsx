@@ -1,23 +1,15 @@
 // app/layout.jsx
 import { Fraunces, Inter } from 'next/font/google'
 import StoreShell from '@/components/StoreShell'
+import { SITE_CONFIG } from '@/lib/config'
 import './globals.css'
 
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
-  display: 'swap',
-})
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
 
 export const metadata = {
-  title: 'Biarritz | Panadería desde 1935',
-  description: 'Panadería artesanal con pedidos online. Facturas, panes y delicias recién horneadas.',
+  title: `${SITE_CONFIG.businessName} | ${SITE_CONFIG.businessTagline}`,
+  description: SITE_CONFIG.businessShortDescription,
 }
 
 export default function RootLayout({ children }) {
