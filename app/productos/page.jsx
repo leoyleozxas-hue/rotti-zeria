@@ -10,7 +10,7 @@ const woodCatalog = {
     "linear-gradient(rgba(18,4,2,.85), rgba(18,4,2,.90)), url('/images/textura-madera.png')",
   backgroundSize: 'cover',
   backgroundPosition: 'center',
-  backgroundAttachment: 'fixed',
+  backgroundAttachment: 'fixed', // <-- ESTO HACE EL PARALLAX
 }
 
 const CATEGORIES = [
@@ -29,6 +29,7 @@ async function ProductosGrid({ categoria }) {
     .from('products')
     .select('*')
     .eq('is_available', true)
+    .neq('category', 'Lunch')
     .order('category', { ascending: true })
     .order('name', { ascending: true })
 
@@ -55,15 +56,22 @@ async function ProductosGrid({ categoria }) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
-        <p className="text-white/70 text-sm font-medium">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
+        {products.map((p, index) => (
+          <div 
+            key={p.id} 
+            className="anim-rise" 
+            style={{ animationDelay: `${index * 80}ms` }} // Efecto cascada
+          >
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+      
+      <div className="text-center border-t border-white/10 pt-8 pb-4">
+        <p className="text-[#E0C89A] text-sm font-medium uppercase tracking-wider">
           Mostrando {products.length} {products.length === 1 ? 'producto' : 'productos'}
         </p>
-      </div>
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
       </div>
     </>
   )
@@ -75,38 +83,33 @@ export default async function ProductosPage({ searchParams }) {
 
   return (
     <>
-      {/* Hero Editorial */}
-      <section className="relative flex items-center justify-center min-h-[50vh] -mt-[4.25rem] pt-[4.25rem] overflow-hidden">
-        {/* Imagen de fondo */}
+      {/* Hero más Editorial y con color */}
+      <section className="relative flex items-center justify-center min-h-[45vh] -mt-[4.25rem] pt-[4.25rem] overflow-hidden">
         <Image
           src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1600&q=85"
           alt="Productos Biarritz"
           fill
           priority
-          className="object-cover object-center"
+          className="object-cover object-center scale-105 animate-[hero-zoom_1.4s_ease-out_both]"
         />
-        {/* Gradientes para oscurecer y dar profundidad */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#150604] via-[#150604]/60 to-transparent" />
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#150604]/90 via-[#3a130d]/70 to-[#C9A96E]/40" />
         
-        {/* Tarjeta de vidrio superpuesta */}
-        <div className="relative z-10 w-full max-w-3xl mx-auto px-4 text-center">
-          <div className="bg-[#150604]/60 backdrop-blur-md border border-white/20 p-8 md:p-12 rounded-2xl shadow-2xl">
-            <span className="text-[#E0C89A] text-xs uppercase tracking-[0.3em] font-bold mb-4 block">
-              Catálogo
-            </span>
-            <h1 className="font-serif text-4xl md:text-6xl text-white mb-4 drop-shadow-lg">
-              Nuestros productos
-            </h1>
-            <p className="text-white/80 text-lg font-light max-w-lg mx-auto">
-              Elaboración 100% artesanal. Elegí tus favoritos y retirá por el local.
-            </p>
-          </div>
+        <div className="relative z-10 w-full max-w-4xl mx-auto px-4 text-center anim-rise">
+          <span className="text-[#E0C89A] text-xs uppercase tracking-[0.3em] font-bold mb-4 block">
+            Elaboración Artesanal
+          </span>
+          <h1 className="font-serif text-5xl md:text-7xl text-white mb-6 drop-shadow-xl">
+            Nuestro Catálogo
+          </h1>
+          <p className="text-white/90 text-lg md:text-xl font-light max-w-xl mx-auto mb-8">
+            Descubrí el sabor de lo hecho a mano. Elegí tus favoritos y retiralos frescos por el local.
+          </p>
+          <div className="w-24 h-px bg-[#E0C89A] mx-auto"></div>
         </div>
       </section>
 
       {/* Catálogo con Sidebar */}
-      <section style={woodCatalog} className="py-12 min-h-screen">
+      <section style={woodCatalog} className="py-12 min-h-screen bg-parallax">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-8">
             

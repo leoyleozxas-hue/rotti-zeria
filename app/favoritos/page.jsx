@@ -1,95 +1,79 @@
 // app/favoritos/page.jsx
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, Trash2, ShoppingBag } from 'lucide-react'
+import { Heart, Trash2 } from 'lucide-react'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
-import { useCartStore } from '@/lib/store/cartStore'
+import ProductCard from '@/components/ProductCard'
 
 export default function FavoritosPage() {
-  const { items, remove, clear } = useFavoritesStore()
-  const addItem = useCartStore((s) => s.addItem)
+  const { items, clear } = useFavoritesStore()
 
   if (items.length === 0) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-20 text-center">
-        <Heart size={48} className="mx-auto text-caramel/30 mb-4" />
-        <h1 className="font-serif text-3xl text-chocolate mb-4">
+      <main className="min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
+        <div className="w-24 h-24 bg-[#EADFC8]/30 rounded-full flex items-center justify-center mb-6">
+          <Heart size={40} className="text-[#C9A96E]" />
+        </div>
+        <h1 className="font-serif text-4xl text-[#2B0F0B] mb-4">
           Todavía no tenés favoritos
         </h1>
-        <p className="text-caramel mb-8">
-          Tocá el corazón en los productos para guardarlos acá.
+        <p className="text-[#6b3a2c] max-w-md mb-8">
+          Tocá el corazón en los productos que más te gusten para guardarlos acá y tenerlos siempre a mano.
         </p>
         <Link
           href="/productos"
-          className="inline-block bg-chocolate text-cream px-8 py-3 rounded-full hover:bg-caramel transition"
+          className="bg-[#2B0F0B] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#5a1a10] transition shadow-lg"
         >
-          Ver productos
+          Explorar productos
         </Link>
       </main>
     )
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-16">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-serif text-4xl text-chocolate">Tus favoritos</h1>
+    <main className="max-w-7xl mx-auto px-4 py-16 min-h-[70vh]">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4 border-b border-[#EADFC8] pb-6">
+        <div>
+          <span className="text-[#C9A96E] text-xs uppercase tracking-[0.3em] font-bold block mb-2">
+            Guardados
+          </span>
+          <h1 className="font-serif text-4xl md:text-5xl text-[#2B0F0B]">
+            Tus favoritos
+          </h1>
+        </div>
         <button
           onClick={clear}
-          className="text-sm text-caramel hover:text-red-500 transition"
+          className="flex items-center gap-2 text-sm text-[#6b3a2c] hover:text-red-600 transition-colors bg-white/50 px-4 py-2 rounded-full border border-[#EADFC8] shadow-sm"
         >
-          Vaciar todo
+          <Trash2 size={16} />
+          Vaciar lista
         </button>
       </div>
 
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.product_id}
-            className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm"
-          >
-            <Link
-              href={`/productos/${item.product_id}`}
-              className="relative w-20 h-20 rounded-xl overflow-hidden bg-beige flex-shrink-0"
+      {/* Grilla de tarjetas con animación */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {items.map((item, index) => {
+          // Adaptamos el item guardado en Zustand al formato que espera ProductCard
+          const productForCard = {
+            id: item.product_id,
+            name: item.name,
+            price: item.price,
+            image_url: item.image_url,
+            category: item.category,
+            description: item.description,
+          }
+
+          return (
+            <div
+              key={item.product_id}
+              className="anim-rise"
+              style={{ animationDelay: `${index * 80}ms` }}
             >
-              {item.image_url && (
-                <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-              )}
-            </Link>
-
-            <div className="flex-1 min-w-0">
-              <span className="text-xs uppercase tracking-wider text-gold">
-                {item.category}
-              </span>
-              <Link href={`/productos/${item.product_id}`}>
-                <h3 className="font-serif text-lg text-chocolate hover:text-caramel transition truncate">
-                  {item.name}
-                </h3>
-              </Link>
-              <p className="text-sm text-caramel">
-                ${item.price.toLocaleString('es-AR')}
-              </p>
+              <ProductCard product={productForCard} />
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => addItem({ id: item.product_id, ...item })}
-                className="flex items-center gap-1 bg-chocolate text-cream px-4 py-2 rounded-full text-sm hover:bg-caramel transition"
-              >
-                <ShoppingBag size={14} />
-                Agregar
-              </button>
-              <button
-                onClick={() => remove(item.product_id)}
-                className="w-9 h-9 rounded-full bg-beige hover:bg-red-100 flex items-center justify-center text-caramel hover:text-red-500 transition"
-                aria-label="Quitar"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </main>
   )

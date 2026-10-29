@@ -1,8 +1,4 @@
 // app/admin/layout.jsx
-//
-// Shell del panel: sidebar de madera con navegación agrupada, topbar sticky con
-// el título real de la ruta y un único punto de foco visible (`.admin-scope`).
-
 'use client'
 
 import Link from 'next/link'
@@ -12,15 +8,19 @@ import { Suspense, useEffect, useState } from 'react'
 import {
   Calendar,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Home,
   LogOut,
-  Menu,
   X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Toaster } from 'sonner'
 import { ADMIN_NAV, titleForPath } from '@/lib/constants/nav'
+import { useNotificationStore } from '@/lib/store/notificationStore'
+
+const SIDEBAR_WIDTH = 288 // px (equivale a w-72)
 
 const woodSidebar = {
   backgroundImage:
@@ -45,6 +45,8 @@ const topbarStyle = {
   backgroundPosition: 'center',
 }
 
+const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]'
+
 export default function AdminLayout({ children }) {
   return (
     <Suspense
@@ -64,30 +66,87 @@ function AdminLayoutContent({ children }) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [today, setToday] = useState('')
-  // Sólo guarda overrides explícitos del usuario; si no hay, el grupo se abre
-  // según la ruta (estado derivado, sin efecto).
   const [openMenus, setOpenMenus] = useState({})
 
-  const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname
+  const { pendingOrders, newConsultas, setCounts } = useNotificationStore()
 
-  // La fecha se calcula en el cliente: la del servidor puede estar en otra zona
-  // horaria y romper la hidratación. Se difiere un tick para no bloquear el
-  // primer render.
+  const currentUrl = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname
+
+  // Fecha del topbar
   useEffect(() => {
     const id = setTimeout(() => {
       setToday(
-        new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })
+        new Date().toLocaleDateString('es-AR', {
+          weekday: 'long',
+          day: '2-digit',
+          month: 'long',
+        })
       )
     }, 0)
     return () => clearTimeout(id)
   }, [])
+
+  // Realtime: contadores
+  useEffect(() => {
+    if (pathname === '/admin/login') return
+    const supabase = createClient()
+
+    async function refreshCounts() {
+      const [ordersRes, consultasRes] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .in('status', ['pending_payment', 'payment_review']),
+        supabase
+          .from('consultas')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'new'),
+      ])
+      setCounts({
+        pendingOrders: ordersRes.count || 0,
+        newConsultas: consultasRes.count || 0,
+      })
+    }
+
+    refreshCounts()
+
+    const channel = supabase
+      .channel('admin-notifications')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => refreshCounts()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'consultas' },
+        () => refreshCounts()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [pathname, setCounts])
 
   const activeGroup = pathname.startsWith('/admin/pedidos')
     ? 'Pedidos'
     : pathname.startsWith('/admin/productos')
       ? 'Productos'
       : null
+
+  // Auto-abrir el grupo activo al navegar (acordeón estricto)
+  useEffect(() => {
+    if (activeGroup) {
+      setOpenMenus({ [activeGroup]: true })
+    } else {
+      setOpenMenus({})
+    }
+  }, [activeGroup])
 
   if (pathname === '/admin/login') {
     return (
@@ -105,6 +164,24 @@ function AdminLayoutContent({ children }) {
     router.refresh()
   }
 
+  function handleMenuToggle(label) {
+    setOpenMenus((prev) => {
+      const isCurrentlyOpen = prev[label] ?? activeGroup === label
+      if (isCurrentlyOpen) {
+        return { ...prev, [label]: false }
+      }
+      // Abrir este, cerrar todos los demás
+      const next = {}
+      ADMIN_NAV.forEach((section) => {
+        section.items.forEach((i) => {
+          if (i.children?.length) next[i.label] = false
+        })
+      })
+      next[label] = true
+      return next
+    })
+  }
+
   const isActive = (href) => {
     if (!href) return false
     if (href === '/admin') return pathname === '/admin'
@@ -113,8 +190,11 @@ function AdminLayoutContent({ children }) {
     return query ? currentUrl === href : !searchParams.toString()
   }
 
+  const counts = { pendingOrders, newConsultas }
+
   return (
     <div className="admin-scope flex min-h-screen text-cream" style={woodMain}>
+      {/* Overlay mobile */}
       {sidebarOpen && (
         <button
           type="button"
@@ -124,11 +204,11 @@ function AdminLayoutContent({ children }) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* ──────────────── SIDEBAR ──────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-white/10 shadow-2xl transition-transform duration-300 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-white/10 shadow-2xl transition-transform duration-[400ms] ${EASE} ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${collapsed ? 'md:-translate-x-full' : 'md:translate-x-0'}`}
         style={woodSidebar}
         aria-label="Navegación del panel"
       >
@@ -159,17 +239,22 @@ function AdminLayoutContent({ children }) {
               <p className="mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-gold-soft/50">
                 {section.group}
               </p>
-
               <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const Icon = item.icon
                   const hasChildren = item.children?.length > 0
-                  const isOpen = openMenus[item.label] ?? activeGroup === item.label
-                  const childActive = hasChildren && item.children.some((c) => isActive(c.href))
+                  const isOpen =
+                    openMenus[item.label] !== undefined
+                      ? openMenus[item.label]
+                      : activeGroup === item.label
+                  const childActive =
+                    hasChildren && item.children.some((c) => isActive(c.href))
                   const selfActive = isActive(item.href)
-                  const active = hasChildren ? childActive || selfActive : selfActive
+                  const active = hasChildren
+                    ? childActive || selfActive
+                    : selfActive
+                  const badgeValue = item.badgeKey ? counts[item.badgeKey] : 0
 
-                  // Próximamente: se muestra, pero no navega a un 404.
                   if (item.soon) {
                     return (
                       <div
@@ -193,11 +278,9 @@ function AdminLayoutContent({ children }) {
                       {hasChildren ? (
                         <button
                           type="button"
-                          onClick={() =>
-                            setOpenMenus((prev) => ({ ...prev, [item.label]: !isOpen }))
-                          }
+                          onClick={() => handleMenuToggle(item.label)}
                           aria-expanded={Boolean(isOpen)}
-                          className={`flex w-full items-center justify-between rounded-field border px-3 py-2 text-sm transition ${
+                          className={`flex w-full items-center justify-between rounded-field border px-3 py-2 text-sm transition-colors ${
                             active || isOpen
                               ? 'border-white/15 bg-white/10 text-white'
                               : 'border-transparent text-white/65 hover:bg-white/5 hover:text-white'
@@ -210,12 +293,19 @@ function AdminLayoutContent({ children }) {
                               className={active ? 'text-gold-soft' : ''}
                             />
                             <span className="font-medium">{item.label}</span>
+                            {badgeValue > 0 && (
+                              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white tabular-nums">
+                                {badgeValue}
+                              </span>
+                            )}
                           </span>
                           <ChevronDown
                             size={14}
                             aria-hidden
-                            className={`transition-transform duration-300 ${
-                              isOpen ? 'rotate-180 text-gold-soft' : 'text-white/35'
+                            className={`transition-transform duration-[350ms] ${EASE} ${
+                              isOpen
+                                ? 'rotate-180 text-gold-soft'
+                                : 'text-white/35'
                             }`}
                           />
                         </button>
@@ -224,29 +314,38 @@ function AdminLayoutContent({ children }) {
                           href={item.href}
                           onClick={() => setSidebarOpen(false)}
                           aria-current={active ? 'page' : undefined}
-                          className={`group flex items-center gap-2.5 rounded-field border px-3 py-2 text-sm transition ${
+                          className={`group flex items-center justify-between gap-2.5 rounded-field border px-3 py-2 text-sm transition-colors ${
                             active
                               ? 'border-gold/35 bg-gradient-to-r from-gold-soft/20 to-transparent font-semibold text-white'
                               : 'border-transparent text-white/65 hover:bg-white/5 hover:text-white'
                           }`}
                         >
-                          <Icon
-                            size={16}
-                            aria-hidden
-                            className={
-                              active
-                                ? 'text-gold-soft'
-                                : 'transition group-hover:text-gold-soft'
-                            }
-                          />
-                          {item.label}
+                          <span className="flex items-center gap-2.5">
+                            <Icon
+                              size={16}
+                              aria-hidden
+                              className={
+                                active
+                                  ? 'text-gold-soft'
+                                  : 'transition group-hover:text-gold-soft'
+                              }
+                            />
+                            {item.label}
+                          </span>
+                          {badgeValue > 0 && (
+                            <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white tabular-nums">
+                              {badgeValue}
+                            </span>
+                          )}
                         </Link>
                       )}
 
                       {hasChildren && (
                         <div
-                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                            isOpen ? 'mt-1 max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                          className={`overflow-hidden transition-[max-height,opacity] duration-[350ms] ${EASE} ${
+                            isOpen
+                              ? 'mt-1 max-h-96 opacity-100'
+                              : 'max-h-0 opacity-0'
                           }`}
                         >
                           <div className="ml-4 space-y-0.5 border-l border-white/10 py-1 pl-3">
@@ -257,8 +356,10 @@ function AdminLayoutContent({ children }) {
                                   key={child.label}
                                   href={child.href}
                                   onClick={() => setSidebarOpen(false)}
-                                  aria-current={activeChild ? 'page' : undefined}
-                                  className={`block rounded-md px-2.5 py-1.5 text-xs transition ${
+                                  aria-current={
+                                    activeChild ? 'page' : undefined
+                                  }
+                                  className={`block rounded-md px-2.5 py-1.5 text-xs transition-colors ${
                                     activeChild
                                       ? 'bg-white/8 font-semibold text-gold-soft'
                                       : 'text-white/45 hover:bg-white/5 hover:text-white'
@@ -298,23 +399,71 @@ function AdminLayoutContent({ children }) {
         </div>
       </aside>
 
-      <div className="flex min-h-screen w-full min-w-0 flex-col overflow-hidden md:ml-72">
+      {/* ──────── TAB LATERAL (solo desktop) ──────── */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+        className={`hidden md:flex fixed top-1/2 z-50 h-12 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-l-0 border-white/15 bg-ink-900/95 text-white/70 shadow-lg backdrop-blur-xl transition-[left,background-color,color] duration-[400ms] ${EASE} hover:bg-ink-800 hover:text-gold-soft ${
+          collapsed ? 'left-0' : 'left-72'
+        }`}
+      >
+        {collapsed ? (
+          <ChevronRight size={14} aria-hidden />
+        ) : (
+          <ChevronLeft size={14} aria-hidden />
+        )}
+      </button>
+
+      {/* ──────── CONTENIDO PRINCIPAL ──────── */}
+      <div
+        className={`flex min-h-screen w-full min-w-0 flex-col overflow-hidden transition-[margin-left] duration-[400ms] ${EASE} ${
+          collapsed ? 'md:ml-0' : 'md:ml-72'
+        }`}
+      >
         <header
           className="sticky top-0 z-20 shrink-0 border-b border-white/10 backdrop-blur-xl"
           style={topbarStyle}
         >
           <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-8">
             <div className="flex min-w-0 items-center gap-3">
+              {/* Hamburguesa animada (mobile) */}
               <button
                 type="button"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Abrir menú"
-                className="rounded-md p-2 text-white/70 transition hover:bg-white/10 hover:text-white md:hidden"
+                onClick={() => setSidebarOpen((v) => !v)}
+                aria-label={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={sidebarOpen}
+                className="relative h-5 w-6 shrink-0 md:hidden"
               >
-                <Menu size={18} aria-hidden />
+                <span
+                  className="absolute left-1/2 top-1/2 h-0.5 w-6 rounded-full bg-white transition-transform duration-300 ease-out"
+                  style={{
+                    transform: sidebarOpen
+                      ? 'translate(-50%, -50%) rotate(45deg)'
+                      : 'translate(-50%, -50%) translateY(-6px)',
+                  }}
+                />
+                <span
+                  className="absolute left-1/2 top-1/2 h-0.5 w-6 rounded-full bg-white transition-all duration-200"
+                  style={{
+                    transform: 'translate(-50%, -50%)',
+                    opacity: sidebarOpen ? 0 : 1,
+                  }}
+                />
+                <span
+                  className="absolute left-1/2 top-1/2 h-0.5 w-6 rounded-full bg-white transition-transform duration-300 ease-out"
+                  style={{
+                    transform: sidebarOpen
+                      ? 'translate(-50%, -50%) rotate(-45deg)'
+                      : 'translate(-50%, -50%) translateY(6px)',
+                  }}
+                />
               </button>
+
               <div className="min-w-0">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-gold-soft">Admin</p>
+                <p className="text-[9px] uppercase tracking-[0.2em] text-gold-soft">
+                  Admin
+                </p>
                 <h2 className="truncate font-serif text-base leading-tight text-white">
                   {titleForPath(pathname)}
                 </h2>

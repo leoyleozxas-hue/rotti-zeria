@@ -7,6 +7,7 @@ import { ArrowLeft, Clock, Wheat, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import AddToCartSection from '@/components/AddToCartSection'
 import ProductCard from '@/components/ProductCard'
+import ShareButtons from '@/components/ShareButtons'
 
 // Filtro CSS para que las fotos de Unsplash parezcan de estudio
 const imageFilter = "contrast-[1.05] saturate-[1.1] brightness-[0.98]"
@@ -73,6 +74,14 @@ async function ProductInfo({ id }) {
 
         <div className="border-t border-[#EADFC8] pt-10">
           <AddToCartSection product={product} />
+        </div>
+
+        {/* Compartir en redes */}
+        <div className="mt-8 pt-6 border-t border-[#EADFC8]">
+          <ShareButtons 
+            productName={product.name} 
+            url={`https://biarritz.uy/productos/${product.id}`}
+          />
         </div>
 
         {/* Sellos de calidad */}
@@ -167,7 +176,7 @@ export default async function ProductDetailPage({ params }) {
   return (
     <main>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[#2B0F0B]">Cargando...</div>}>
-        <ProductInfo id={id} />
+        <ProductInfo id={id} /> 
       </Suspense>
 
       {product && (

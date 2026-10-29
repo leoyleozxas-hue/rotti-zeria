@@ -114,7 +114,7 @@ export default function Home() {
               <ArrowRight size={18} className="group-hover:translate-x-1 transition" />
             </Link>
             <Link
-              href="/eventos"
+              href="/lunch-eventos"
               className="inline-flex items-center gap-2 border border-white/60 text-white px-7 py-3.5 rounded-full hover:bg-white/10 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Lunch & Eventos
@@ -248,7 +248,7 @@ export default function Home() {
             a medida para reuniones, cumpleaños y empresas.
           </p>
           <Link
-            href="/eventos"
+            href="/lunch-eventos"
             className="inline-flex items-center gap-2 bg-[#F5EDE3] text-[#2b0f0b] px-8 py-3.5 rounded-full font-medium hover:bg-white transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Ver combos <ArrowRight size={18} />

@@ -15,7 +15,7 @@ import { IconButton, IconLink } from '@/components/ui/button'
 const NAV_LINKS = [
   { href: '/', label: 'Inicio' },
   { href: '/productos', label: 'Productos' },
-  { href: '/eventos', label: 'Lunch & Eventos' },
+  { href: '/lunch-eventos', label: 'Lunch & Eventos' },
   { href: '/contacto', label: 'Contacto' },
 ]
 

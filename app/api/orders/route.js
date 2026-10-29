@@ -10,7 +10,6 @@ export async function POST(request) {
     const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0)
     const orderNumber = `BZ-${Date.now().toString().slice(-6)}`
 
-    // Armar dirección completa si es delivery
     let fullAddress = null
     if (customer.delivery_type === 'delivery') {
       const parts = [
@@ -24,7 +23,6 @@ export async function POST(request) {
       fullAddress = parts.join(', ')
     }
 
-    // Nombre completo
     const fullName = `${customer.first_name} ${customer.last_name}`.trim()
 
     const { data: order, error: orderError } = await supabase
@@ -39,6 +37,7 @@ export async function POST(request) {
         pickup_date: customer.pickup_date || null,
         pickup_time: customer.pickup_time || null,
         payment_reference: customer.payment_reference || null,
+        birthdate: customer.birthdate || null, // 👈 NUEVO
         total,
         status: 'pending_payment',
         payment_method: 'transfer',
@@ -48,12 +47,11 @@ export async function POST(request) {
 
     if (orderError) throw orderError
 
-    // ACÁ ESTÁ LA MAGIA: Guardamos el nombre y la foto del producto
     const orderItems = items.map((i) => ({
       order_id: order.id,
       product_id: i.product_id,
-      product_name: i.name,               // <--- Guarda el nombre
-      product_image: i.image_url || null, // <--- Guarda la foto
+      product_name: i.name,
+      product_image: i.image_url || null,
       quantity: i.quantity,
       unit_price: i.price,
       subtotal: i.price * i.quantity,

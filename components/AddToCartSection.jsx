@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
 import useHydrated from '@/lib/hooks/useHydrated'
+import { toast } from 'sonner'
 
 export default function AddToCartSection({ product }) {
   const router = useRouter()
@@ -17,10 +18,15 @@ export default function AddToCartSection({ product }) {
   const [quantity, setQuantity] = useState(1)
   const mounted = useHydrated()
 
+
+// En handleAdd:
   const handleAdd = () => {
     for (let i = 0; i < quantity; i++) {
       addItem(product)
     }
+    toast.success(`${quantity}x ${product.name} agregado al carrito`, {
+      description: 'Revisá tu pedido en el carrito',
+    })
     router.push('/carrito')
   }
 
