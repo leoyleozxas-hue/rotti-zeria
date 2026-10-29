@@ -43,6 +43,10 @@ next-env.d.ts
 # tooling local (CLI de superdesign instalado a mano + temporales de agente)
 /.tmp-superdesign-cli/
 /.tmp-*/
+
+# tooling local (CLI de superdesign instalado a mano + temporales de agente)
+/.tmp-superdesign-cli/
+/.tmp-*/
 *.log
 
 # ==========================================
