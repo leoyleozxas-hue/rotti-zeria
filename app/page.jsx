@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
+import MarqueeBanner from '@/components/MarqueeBanner'
 import { ArrowRight, Clock, MapPin, Wheat } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/config'
 
@@ -27,16 +28,31 @@ async function FeaturedProducts() {
     .from('products')
     .select('*')
     .eq('is_available', true)
-    .limit(4)
+    .limit(8)
 
   if (!products?.length) return null
 
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
-      ))}
-    </div>
+    <>
+      {/* Mobile: carrusel horizontal */}
+      <div className="md:hidden -mx-4 px-4 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide">
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="snap-start shrink-0 w-[72vw] max-w-[300px]"
+          >
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: grid 4 columnas */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {products.slice(0, 4).map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -123,6 +139,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* MARQUEE */}
+      <MarqueeBanner />
+
       {/* BARRA DE INFO */}
       <section style={woodVertical} className="text-[#F5EDE3]">
         <div className="max-w-6xl mx-auto px-4 py-7 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
@@ -152,7 +171,33 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {/* Mobile: carrusel horizontal */}
+        <div className="md:hidden -mx-4 px-4 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide">
+          {CATEGORIES.map((cat) => (
+            <Link
+              key={cat.name}
+              href={`/productos?categoria=${encodeURIComponent(cat.name)}`}
+              className="snap-start shrink-0 w-[62vw] max-w-[240px] group overflow-hidden bg-white/80 border border-[#c4b5a5] hover:border-[#5a1a10] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#5a1a10]"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden bg-[#eadfc8]">
+                <Image
+                  src={cat.image}
+                  alt={cat.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="62vw"
+                />
+              </div>
+              <div className="p-4 text-center">
+                <h3 className="font-serif text-lg text-[#3a130d] mb-1">{cat.name}</h3>
+                <p className="text-xs text-[#6b3a2c] leading-snug">{cat.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Desktop: grid */}
+        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-4">
           {CATEGORIES.map((cat) => (
             <Link
               key={cat.name}
@@ -165,7 +210,7 @@ export default function Home() {
                   alt={cat.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 50vw, 20vw"
+                  sizes="(max-width: 1024px) 33vw, 20vw"
                 />
               </div>
               <div className="p-4 text-center">
