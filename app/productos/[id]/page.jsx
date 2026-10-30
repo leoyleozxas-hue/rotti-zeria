@@ -1,6 +1,5 @@
 // app/productos/[id]/page.jsx
 import { Suspense } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Clock, Wheat } from 'lucide-react'
@@ -8,9 +7,8 @@ import { createClient } from '@/lib/supabase/server'
 import { SITE_CONFIG } from '@/lib/config'
 import AddToCartSection from '@/components/AddToCartSection'
 import ProductCard from '@/components/ProductCard'
+import ProductGallery from '@/components/ProductGallery'
 import ShareButtons from '@/components/ShareButtons'
-
-const imageFilter = "contrast-[1.05] saturate-[1.1] brightness-[0.98]"
 
 async function ProductInfo({ id }) {
   const supabase = await createClient()
@@ -22,78 +20,105 @@ async function ProductInfo({ id }) {
 
   if (error || !product) notFound()
 
+  // Descripción: 1er bloque = párrafo, resto = ítems de la lista
+  const rawLines = (product.description || '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l !== '')
+
+  const hasListItems = rawLines.length > 1
+  const mainDescription = hasListItems ? rawLines[0] : product.description
+  const listItems = hasListItems ? rawLines.slice(1) : []
+
+  const gallery = Array.isArray(product.gallery) ? product.gallery : []
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#FAF7F2]">
-      <div className="w-full lg:w-3/5 relative min-h-[50vh] lg:min-h-screen bg-[#EADFC8]">
-        {product.image_url ? (
-          <Image
-            src={product.image_url}
-            alt={product.name}
-            fill
-            priority
-            className={`object-cover ${imageFilter}`}
-            sizes="(max-width: 1024px) 100vw, 60vw"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[#9a8b7a]">
-            Sin imagen
-          </div>
-        )}
+
+      {/* Columna imagen (50%) — tarjeta centrada y contenida */}
+      <div className="w-full lg:w-1/2 relative flex items-center justify-center bg-[#FAF7F2] p-4 lg:p-10">
 
         <Link
           href="/productos"
-          className="absolute top-6 left-6 z-10 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md text-[#2B0F0B] px-5 py-2.5 rounded-full text-sm font-medium hover:bg-white transition shadow-lg"
+          className="absolute top-4 left-4 lg:top-8 lg:left-8 z-20 inline-flex items-center gap-2 bg-white/90 backdrop-blur-md text-[#2B0F0B] px-4 py-2 rounded-full text-xs font-medium hover:bg-white transition shadow-lg"
         >
-          <ArrowLeft size={16} /> Volver
+          <ArrowLeft size={14} /> Volver
         </Link>
+
+        {/* Tarjeta de imagen: cuadrada en mobile, 4:5 en desktop, max 460px */}
+        <div className="relative w-full lg:max-w-[460px] aspect-square lg:aspect-[4/5] lg:rounded-2xl overflow-hidden lg:shadow-2xl bg-[#EADFC8]">
+          <ProductGallery mainImage={product.image_url} gallery={gallery} />
+        </div>
       </div>
 
-      <div className="w-full lg:w-2/5 flex flex-col justify-center px-8 py-16 lg:px-20 lg:py-24">
-        <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#9a8b7a] mb-6 block">
+      {/* Columna contenido (50%) */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-10 lg:px-14 xl:px-20 lg:py-16">
+        <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#9a8b7a] mb-4 block">
           {product.category}
         </span>
 
-        <h1 className="font-serif text-5xl lg:text-7xl text-[#2B0F0B] leading-[1.05] mb-6">
+        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl xl:text-6xl text-[#2B0F0B] leading-[1.05] mb-6">
           {product.name}
         </h1>
 
-        <p className="text-lg text-gray-600 font-light leading-relaxed mb-10 max-w-md">
-          {product.description}
-        </p>
+        <div className="mb-8 max-w-xl">
+          <p className="text-base lg:text-lg text-gray-600 font-light leading-relaxed">
+            {mainDescription}
+          </p>
 
-        <div className="flex items-end gap-4 mb-10">
-          <span className="font-serif text-4xl text-[#2B0F0B]">
+          {listItems.length > 0 && (
+            <ul className="space-y-1.5 mt-5">
+              {listItems.map((item, index) => (
+                <li key={index} className="flex items-start gap-2.5">
+                  <span className="text-[#C9A96E] mt-2 shrink-0">
+                    <svg width="5" height="5" viewBox="0 0 6 6" fill="currentColor">
+                      <circle cx="3" cy="3" r="3" />
+                    </svg>
+                  </span>
+                  <span className="text-gray-600 font-light leading-relaxed text-sm lg:text-[15px]">
+                    {item}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="flex items-end gap-4 mb-6">
+          <span className="font-serif text-3xl lg:text-4xl text-[#2B0F0B]">
             ${Number(product.price).toLocaleString('es-AR')}
           </span>
         </div>
 
-        <div className="border-t border-[#EADFC8] pt-10">
+        <div className="border-t border-[#EADFC8] pt-6">
           <AddToCartSection product={product} />
         </div>
 
-        <div className="mt-8 pt-6 border-t border-[#EADFC8]">
+        <div className="mt-6 pt-6 border-t border-[#EADFC8]">
           <ShareButtons
             productName={product.name}
             url={`${SITE_CONFIG.siteUrl}/productos/${product.id}`}
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-16 pt-8 border-t border-[#EADFC8]">
-          <div className="flex items-start gap-3">
-            <Wheat size={20} className="text-[#C9A96E] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-[#2B0F0B]">100% Artesanal</p>
-              <p className="text-xs text-gray-500 mt-1">Masa madre y fermentación lenta.</p>
+        {product.category !== 'Lunch' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-10 pt-6 border-t border-[#EADFC8]">
+            <div className="flex items-start gap-3">
+              <Wheat size={18} className="text-[#C9A96E] shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-[#2B0F0B]">100% Artesanal</p>
+                <p className="text-xs text-gray-500 mt-1">Masa madre y fermentación lenta.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Clock size={18} className="text-[#C9A96E] shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-[#2B0F0B]">Horneado hoy</p>
+                <p className="text-xs text-gray-500 mt-1">Retirá fresco por el local.</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-start gap-3">
-            <Clock size={20} className="text-[#C9A96E] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-[#2B0F0B]">Horneado hoy</p>
-              <p className="text-xs text-gray-500 mt-1">Retirá fresco por el local.</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )
@@ -112,11 +137,11 @@ async function RelatedProducts({ category, excludeId }) {
   if (!products || products.length === 0) return null
 
   return (
-    <section className="bg-[#FAF7F2] py-20 border-t border-[#EADFC8]">
+    <section className="bg-[#EADFC8] py-20 border-t border-[#9a8b7a]/20">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#9a8b7a] block mb-2">
+            <span className="text-[11px] uppercase tracking-[0.3em] font-bold text-[#6b3a2c] block mb-2">
               Descubrí más
             </span>
             <h2 className="font-serif text-3xl md:text-4xl text-[#2B0F0B]">
@@ -125,7 +150,7 @@ async function RelatedProducts({ category, excludeId }) {
           </div>
           <Link
             href={`/productos?categoria=${encodeURIComponent(category)}`}
-            className="hidden md:block text-sm font-medium text-[#2B0F0B] border-b border-[#2B0F0B] pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition"
+            className="hidden md:block text-sm font-medium text-[#2B0F0B] border-b border-[#2B0F0B] pb-1 hover:text-[#6b3a2c] hover:border-[#6b3a2c] transition"
           >
             Ver todos
           </Link>

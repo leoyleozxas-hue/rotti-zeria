@@ -6,11 +6,21 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
-import { ChevronRight, ChevronLeft, Loader2, CheckCircle2, Copy, Check, MessageCircle, MapPin, Calendar, CreditCard } from 'lucide-react'
+import {
+  ChevronRight,
+  ChevronLeft,
+  Loader2,
+  CheckCircle2,
+  Copy,
+  Check,
+  MessageCircle,
+  MapPin,
+  Calendar,
+  CreditCard,
+} from 'lucide-react'
 import { useCartStore } from '@/lib/store/cartStore'
 import { orderSchema } from '@/lib/validations/order'
 import { toast } from 'sonner'
-import { SITE_CONFIG } from '@/lib/config'
 
 function getMinDate() {
   const d = new Date()
@@ -69,7 +79,11 @@ export default function CheckoutPage() {
       const result = await res.json()
       if (!result.success) throw new Error(result.error)
 
-      setOrderResult(result.order)
+      setOrderResult({
+        ...result.order,
+        _bank: result.bank,
+        _whatsapp: result.whatsapp,
+      })
       clearCart()
       setStep(4)
     } catch (err) {
@@ -79,7 +93,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // Botón "Confirmar Pedido" — SOLO aquí se envía
   const handleConfirm = () => {
     if (submitting) return
     handleSubmit(onSubmit)()
@@ -111,75 +124,94 @@ export default function CheckoutPage() {
 
       {/* ── ÉXITO ── */}
       {step === 4 && orderResult && (
-      <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl border border-[#EADFC8] text-center anim-rise">
-        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 size={40} className="text-emerald-600" />
-        </div>
-        <h1 className="font-serif text-4xl text-[#2B0F0B] mb-2">¡Pedido confirmado!</h1>
-        <p className="text-[#6b3a2c] mb-6">
-          Tu número de pedido es{' '}
-          <strong className="text-[#2B0F0B] text-lg font-mono">{orderResult.order_number}</strong>
-        </p>
+        <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl border border-[#EADFC8] text-center anim-rise">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 size={40} className="text-emerald-600" />
+          </div>
+          <h1 className="font-serif text-4xl text-[#2B0F0B] mb-2">¡Pedido confirmado!</h1>
+          <p className="text-[#6b3a2c] mb-6">
+            Tu número de pedido es{' '}
+            <strong className="text-[#2B0F0B] text-lg font-mono">{orderResult.order_number}</strong>
+          </p>
 
-    <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#EADFC8] text-left mb-8">
-      <h3 className="font-serif text-lg text-[#2B0F0B] mb-4 flex items-center gap-2">
-        <CreditCard size={18} className="text-[#C9A96E]" /> Datos para transferir
-      </h3>
-      <div className="space-y-3 text-sm">
-        <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
-          <span className="text-[#9a8b7a]">Banco</span>
-          <span className="font-medium text-[#2B0F0B]">{SITE_CONFIG.bank.name}</span>
-        </div>
-        <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
-          <span className="text-[#9a8b7a]">Titular</span>
-          <span className="font-medium text-[#2B0F0B]">{SITE_CONFIG.bank.holder}</span>
-        </div>
-        <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
-          <span className="text-[#9a8b7a]">Alias</span>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-[#2B0F0B]">{SITE_CONFIG.bank.alias}</span>
-            <button
-              type="button"
-              onClick={() => copyToClipboard(SITE_CONFIG.bank.alias, 'alias')}
-              className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
-              aria-label="Copiar alias"
+          <div className="bg-[#FAF7F2] rounded-2xl p-6 border border-[#EADFC8] text-left mb-8">
+            <h3 className="font-serif text-lg text-[#2B0F0B] mb-4 flex items-center gap-2">
+              <CreditCard size={18} className="text-[#C9A96E]" /> Datos para transferir
+            </h3>
+            <div className="space-y-3 text-sm">
+              {orderResult._bank?.name && (
+                <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
+                  <span className="text-[#9a8b7a]">Banco</span>
+                  <span className="font-medium text-[#2B0F0B]">{orderResult._bank.name}</span>
+                </div>
+              )}
+              {orderResult._bank?.holder && (
+                <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
+                  <span className="text-[#9a8b7a]">Titular</span>
+                  <span className="font-medium text-[#2B0F0B] text-right">
+                    {orderResult._bank.holder}
+                  </span>
+                </div>
+              )}
+              {orderResult._bank?.alias && (
+                <div className="flex justify-between items-center border-b border-[#EADFC8] pb-2">
+                  <span className="text-[#9a8b7a]">Alias</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#2B0F0B]">{orderResult._bank.alias}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(orderResult._bank.alias, 'alias')}
+                      className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
+                      aria-label="Copiar alias"
+                    >
+                      {copiedField === 'alias' ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {orderResult._bank?.cbu && (
+                <div className="flex justify-between items-center">
+                  <span className="text-[#9a8b7a]">CBU</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[#2B0F0B] font-mono text-xs">
+                      {orderResult._bank.cbu}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(orderResult._bank.cbu, 'cbu')}
+                      className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
+                      aria-label="Copiar CBU"
+                    >
+                      {copiedField === 'cbu' ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {orderResult._whatsapp && (
+              <a
+                href={`https://wa.me/${orderResult._whatsapp}?text=${encodeURIComponent(
+                  `Hola! Acabo de hacer el pedido #${orderResult.order_number} y quiero enviar el comprobante de transferencia.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-xl font-bold hover:bg-[#1eb356] transition shadow-lg"
+              >
+                <MessageCircle size={20} /> Enviar comprobante por WhatsApp
+              </a>
+            )}
+            <Link
+              href="/"
+              className="block w-full py-3 text-sm text-[#6b3a2c] hover:text-[#2B0F0B] transition"
             >
-              {copiedField === 'alias' ? <Check size={14} /> : <Copy size={14} />}
-            </button>
+              Volver al inicio
+            </Link>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-[#9a8b7a]">CBU</span>
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-[#2B0F0B] font-mono text-xs">{SITE_CONFIG.bank.cbu}</span>
-            <button
-              type="button"
-              onClick={() => copyToClipboard(SITE_CONFIG.bank.cbu, 'cbu')}
-              className="p-1.5 bg-white border border-[#EADFC8] rounded-md hover:bg-[#EADFC8] transition text-[#C9A96E]"
-              aria-label="Copiar CBU"
-            >
-              {copiedField === 'cbu' ? <Check size={14} /> : <Copy size={14} />}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="space-y-3">
-      <a
-        href={`https://wa.me/${SITE_CONFIG.whatsapp}?text=${encodeURIComponent(`Hola! Acabo de hacer el pedido #${orderResult.order_number} y quiero enviar el comprobante de transferencia.`)}`}
-        target="_blank"
-        rel="noreferrer"
-        className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-xl font-bold hover:bg-[#1eb356] transition shadow-lg"
-      >
-        <MessageCircle size={20} /> Enviar comprobante por WhatsApp
-      </a>
-      <Link href="/" className="block w-full py-3 text-sm text-[#6b3a2c] hover:text-[#2B0F0B] transition">
-        Volver al inicio
-      </Link>
-    </div>
-  </div>
-)}
+      )}
 
       {/* ── FORMULARIO ── */}
       {step < 4 && (
@@ -224,7 +256,6 @@ export default function CheckoutPage() {
             })}
           </div>
 
-          {/* Form blindado: Enter no hace nada */}
           <form
             onSubmit={(e) => e.preventDefault()}
             className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-[#EADFC8]"
@@ -235,53 +266,75 @@ export default function CheckoutPage() {
                 <h2 className="font-serif text-2xl text-[#2B0F0B] mb-6">Tus datos</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Nombre</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Nombre
+                    </label>
                     <input
                       {...register('first_name')}
                       className="w-full rounded-xl border border-[#EADFC8] bg-[#FAF7F2] px-4 py-3 text-[#2B0F0B] focus:border-[#C9A96E] focus:outline-none"
                     />
-                    {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name.message}</p>}
+                    {errors.first_name && (
+                      <p className="text-red-500 text-xs mt-1">{errors.first_name.message}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Apellido</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Apellido
+                    </label>
                     <input
                       {...register('last_name')}
                       className="w-full rounded-xl border border-[#EADFC8] bg-[#FAF7F2] px-4 py-3 text-[#2B0F0B] focus:border-[#C9A96E] focus:outline-none"
                     />
-                    {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name.message}</p>}
+                    {errors.last_name && (
+                      <p className="text-red-500 text-xs mt-1">{errors.last_name.message}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Documento (DNI)</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Documento (DNI)
+                    </label>
                     <input
                       {...register('dni')}
                       className="w-full rounded-xl border border-[#EADFC8] bg-[#FAF7F2] px-4 py-3 text-[#2B0F0B] focus:border-[#C9A96E] focus:outline-none"
                     />
-                    {errors.dni && <p className="text-red-500 text-xs mt-1">{errors.dni.message}</p>}
+                    {errors.dni && (
+                      <p className="text-red-500 text-xs mt-1">{errors.dni.message}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Teléfono</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Teléfono
+                    </label>
                     <input
                       {...register('customer_phone')}
                       className="w-full rounded-xl border border-[#EADFC8] bg-[#FAF7F2] px-4 py-3 text-[#2B0F0B] focus:border-[#C9A96E] focus:outline-none"
                     />
-                    {errors.customer_phone && <p className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>}
+                    {errors.customer_phone && (
+                      <p className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Fecha de nacimiento</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Fecha de nacimiento
+                    </label>
                     <input
                       type="date"
                       {...register('birthdate')}
                       max={new Date().toISOString().split('T')[0]}
                       className="w-full rounded-xl border border-[#EADFC8] bg-[#FAF7F2] px-4 py-3 text-[#2B0F0B] focus:border-[#C9A96E] focus:outline-none"
                     />
-                    {errors.birthdate && <p className="text-red-500 text-xs mt-1">{errors.birthdate.message}</p>}
+                    {errors.birthdate && (
+                      <p className="text-red-500 text-xs mt-1">{errors.birthdate.message}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Email (opcional)</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Email (opcional)
+                    </label>
                     <input
                       type="email"
                       {...register('customer_email')}
@@ -299,13 +352,23 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <label className="cursor-pointer">
-                    <input type="radio" value="pickup" {...register('delivery_type')} className="peer sr-only" />
+                    <input
+                      type="radio"
+                      value="pickup"
+                      {...register('delivery_type')}
+                      className="peer sr-only"
+                    />
                     <div className="p-4 rounded-xl border border-[#EADFC8] bg-[#FAF7F2] peer-checked:border-[#2B0F0B] peer-checked:bg-[#2B0F0B] peer-checked:text-white text-center transition">
                       Retiro en local
                     </div>
                   </label>
                   <label className="cursor-pointer">
-                    <input type="radio" value="delivery" {...register('delivery_type')} className="peer sr-only" />
+                    <input
+                      type="radio"
+                      value="delivery"
+                      {...register('delivery_type')}
+                      className="peer sr-only"
+                    />
                     <div className="p-4 rounded-xl border border-[#EADFC8] bg-[#FAF7F2] peer-checked:border-[#2B0F0B] peer-checked:bg-[#2B0F0B] peer-checked:text-white text-center transition">
                       Envío a domicilio
                     </div>
@@ -317,26 +380,43 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="col-span-2">
                         <label className="block text-xs text-[#6b3a2c] mb-1">Calle</label>
-                        <input {...register('street')} className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none" />
-                        {errors.street && <p className="text-red-500 text-xs mt-1">{errors.street.message}</p>}
+                        <input
+                          {...register('street')}
+                          className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none"
+                        />
+                        {errors.street && (
+                          <p className="text-red-500 text-xs mt-1">{errors.street.message}</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-xs text-[#6b3a2c] mb-1">Número</label>
-                        <input {...register('street_number')} className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none" />
+                        <input
+                          {...register('street_number')}
+                          className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none"
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs text-[#6b3a2c] mb-1">Barrio</label>
-                        <input {...register('neighborhood')} className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none" />
+                        <input
+                          {...register('neighborhood')}
+                          className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none"
+                        />
                       </div>
                       <div>
                         <label className="block text-xs text-[#6b3a2c] mb-1">Ciudad</label>
-                        <input {...register('city')} className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none" />
+                        <input
+                          {...register('city')}
+                          className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none"
+                        />
                       </div>
                       <div>
                         <label className="block text-xs text-[#6b3a2c] mb-1">C.P.</label>
-                        <input {...register('postal_code')} className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none" />
+                        <input
+                          {...register('postal_code')}
+                          className="w-full rounded-lg border border-[#EADFC8] px-3 py-2 text-sm focus:border-[#C9A96E] focus:outline-none"
+                        />
                       </div>
                     </div>
                   </div>
@@ -344,17 +424,23 @@ export default function CheckoutPage() {
 
                 <div className="grid sm:grid-cols-2 gap-4 mt-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Fecha del pedido</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Fecha del pedido
+                    </label>
                     <input
                       type="date"
                       {...register('pickup_date')}
                       min={getMinDate()}
                       className="w-full rounded-xl border border-[#EADFC8] bg-[#FAF7F2] px-4 py-3 text-[#2B0F0B] focus:border-[#C9A96E] focus:outline-none"
                     />
-                    {errors.pickup_date && <p className="text-red-500 text-xs mt-1">{errors.pickup_date.message}</p>}
+                    {errors.pickup_date && (
+                      <p className="text-red-500 text-xs mt-1">{errors.pickup_date.message}</p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">Horario aprox. (opcional)</label>
+                    <label className="block text-xs uppercase tracking-wider text-[#6b3a2c] font-semibold mb-1.5">
+                      Horario aprox. (opcional)
+                    </label>
                     <input
                       type="time"
                       {...register('pickup_time')}
@@ -378,7 +464,9 @@ export default function CheckoutPage() {
                     <ul className="space-y-2 text-sm text-[#6b3a2c]">
                       {items.map((i) => (
                         <li key={i.product_id} className="flex justify-between">
-                          <span>{i.quantity}x {i.name}</span>
+                          <span>
+                            {i.quantity}x {i.name}
+                          </span>
                           <span>${(i.price * i.quantity).toLocaleString('es-AR')}</span>
                         </li>
                       ))}
@@ -392,11 +480,25 @@ export default function CheckoutPage() {
                     <p className="text-sm text-[#6b3a2c]">
                       {deliveryType === 'pickup'
                         ? 'Retiro en local'
-                        : `Envío a: ${watch('street')} ${watch('street_number')}, ${watch('neighborhood')}`}
+                        : `Envío a: ${watch('street')} ${watch('street_number')}, ${watch(
+                            'neighborhood'
+                          )}`}
                     </p>
                     <p className="text-sm text-[#6b3a2c] flex items-center gap-2 mt-1">
                       <Calendar size={14} /> {watch('pickup_date')}
                       {watch('pickup_time') && ` a las ${watch('pickup_time')}`}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-[#EADFC8] pt-4">
+                    <h3 className="font-semibold text-[#2B0F0B] mb-2 flex items-center gap-2">
+                      <CreditCard size={16} /> Método de pago
+                    </h3>
+                    <p className="text-sm text-[#6b3a2c]">
+                      <strong className="text-[#2B0F0B]">Transferencia bancaria</strong>
+                    </p>
+                    <p className="text-xs text-[#9a8b7a] mt-1">
+                      Al confirmar, te mostramos los datos de la cuenta para transferir.
                     </p>
                   </div>
 

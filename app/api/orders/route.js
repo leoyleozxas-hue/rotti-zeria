@@ -1,6 +1,7 @@
 // app/api/orders/route.js
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getSettings } from '@/lib/settings'
 
 export async function POST(request) {
   try {
@@ -37,7 +38,7 @@ export async function POST(request) {
         pickup_date: customer.pickup_date || null,
         pickup_time: customer.pickup_time || null,
         payment_reference: customer.payment_reference || null,
-        birthdate: customer.birthdate || null, // 👈 NUEVO
+        birthdate: customer.birthdate || null,
         total,
         status: 'pending_payment',
         payment_method: 'transfer',
@@ -63,7 +64,15 @@ export async function POST(request) {
 
     if (itemsError) throw itemsError
 
-    return NextResponse.json({ success: true, order })
+    // 👇 Traemos los settings para devolver datos bancarios + WhatsApp
+    const settings = await getSettings()
+
+    return NextResponse.json({
+      success: true,
+      order,
+      bank: settings.bank,
+      whatsapp: settings.whatsapp,
+    })
   } catch (error) {
     console.error('Error creando pedido:', error)
     return NextResponse.json(
