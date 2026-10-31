@@ -17,15 +17,13 @@ export default function StoreShell({ children, footer }) {
   return (
     <>
       <Header />
-      <main className="flex-1 pt-[4.25rem]">{children}</main>
+      <main className="flex-1 pt-[6.75rem]">{children}</main>
       {footer}
       <CartDrawer />
       <Toaster
         position="top-center"
         richColors
-        toastOptions={{
-          style: { fontFamily: 'inherit' },
-        }}
+        toastOptions={{ style: { fontFamily: 'inherit' } }}
       />
     </>
   )

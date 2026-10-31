@@ -2,7 +2,17 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, ChevronRight} from 'lucide-react'
+import {
+  ArrowRight,
+  Briefcase,
+  Cake,
+  ChevronRight,
+  Croissant,
+  Flame,
+  LayoutGrid,
+  Sandwich,
+  Wheat,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
 import { SITE_CONFIG } from '@/lib/config'
@@ -18,13 +28,13 @@ const woodCatalog = {
 }
 
 const CATEGORIES = [
-  { value: 'Todos', label: 'Todos' },
-  { value: 'Panes', label: 'Panes' },
-  { value: 'Facturas', label: 'Facturas' },
-  { value: 'Dulces', label: 'Dulces' },
-  { value: 'Salados', label: 'Salados' },
-  { value: 'Bocados calientes', label: 'Bocados' },
-  { value: 'Lunch', label: 'Lunch' },
+  { value: 'Todos', label: 'Todos', icon: LayoutGrid },
+  { value: 'Panes', label: 'Panes', icon: Wheat },
+  { value: 'Facturas', label: 'Facturas', icon: Croissant },
+  { value: 'Dulces', label: 'Dulces', icon: Cake },
+  { value: 'Salados', label: 'Salados', icon: Sandwich },
+  { value: 'Bocados calientes', label: 'Bocados', icon: Flame },
+  { value: 'Lunch', label: 'Lunch', icon: Briefcase },
 ]
 
 function buildUrl({ categoria, page }) {
@@ -70,10 +80,7 @@ async function ProductosGrid({ categoria, page }) {
     return (
       <div className="text-center py-16 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 px-6">
         <p className="text-white text-lg">No hay productos en esta categoría.</p>
-        <Link
-          href="/productos"
-          className="text-[#E0C89A] hover:text-white mt-4 inline-block underline"
-        >
+        <Link href="/productos" className="text-[#E0C89A] hover:text-white mt-4 inline-block underline">
           Ver todos
         </Link>
       </div>
@@ -87,11 +94,7 @@ async function ProductosGrid({ categoria, page }) {
     <>
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-12">
         {products.map((p, index) => (
-          <div
-            key={p.id}
-            className="anim-rise"
-            style={{ animationDelay: index < 8 ? `${index * 60}ms` : '0ms' }}
-          >
+          <div key={p.id} className="anim-rise" style={{ animationDelay: index < 8 ? `${index * 60}ms` : '0ms' }}>
             <ProductCard product={p} />
           </div>
         ))}
@@ -104,21 +107,14 @@ async function ProductosGrid({ categoria, page }) {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
-            {/* Anterior */}
             {page > 1 ? (
-              <Link
-                href={buildUrl({ categoria, page: page - 1 })}
-                className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white transition text-xs sm:text-sm font-medium"
-              >
+              <Link href={buildUrl({ categoria, page: page - 1 })} className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white transition text-xs sm:text-sm font-medium">
                 ← Anterior
               </Link>
             ) : (
-              <span className="px-3 sm:px-4 py-2 rounded-lg bg-white/5 text-white/25 border border-white/10 text-xs sm:text-sm">
-                ← Anterior
-              </span>
+              <span className="px-3 sm:px-4 py-2 rounded-lg bg-white/5 text-white/25 border border-white/10 text-xs sm:text-sm">← Anterior</span>
             )}
 
-            {/* Números */}
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
                 const active = p === page
@@ -138,18 +134,12 @@ async function ProductosGrid({ categoria, page }) {
               })}
             </div>
 
-            {/* Siguiente */}
             {page < totalPages ? (
-              <Link
-                href={buildUrl({ categoria, page: page + 1 })}
-                className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white transition text-xs sm:text-sm font-medium"
-              >
+              <Link href={buildUrl({ categoria, page: page + 1 })} className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white transition text-xs sm:text-sm font-medium">
                 Siguiente →
               </Link>
             ) : (
-              <span className="px-3 sm:px-4 py-2 rounded-lg bg-white/5 text-white/25 border border-white/10 text-xs sm:text-sm">
-                Siguiente →
-              </span>
+              <span className="px-3 sm:px-4 py-2 rounded-lg bg-white/5 text-white/25 border border-white/10 text-xs sm:text-sm">Siguiente →</span>
             )}
           </div>
         )}
@@ -164,15 +154,15 @@ export default async function ProductosPage({ searchParams }) {
   const page = Math.max(1, parseInt(params?.page || '1', 10) || 1)
 
   return (
-    <>
-      {/* Hero */}
-      <section className="relative flex items-center justify-center min-h-[35vh] md:min-h-[45vh] -mt-[4.25rem] pt-[4.25rem] overflow-hidden">
+    <div className="relative">
+      {/* HERO sticky — los productos lo van a tapar al scrollear */}
+      <section className="sticky top-0 z-0 h-[40vh] sm:h-[50vh] -mt-[6.75rem] pt-[6.75rem] overflow-hidden flex items-center justify-center">
         <Image
           src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1600&q=85"
           alt={`Productos ${SITE_CONFIG.businessName}`}
           fill
           priority
-          className="object-cover object-center scale-105 animate-[hero-zoom_1.4s_ease-out_both]"
+          className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[#150604]/90 via-[#3a130d]/70 to-[#C9A96E]/40" />
 
@@ -180,35 +170,39 @@ export default async function ProductosPage({ searchParams }) {
           <span className="text-[#E0C89A] text-[10px] sm:text-xs uppercase tracking-[0.3em] font-bold mb-3 sm:mb-4 block">
             Elaboración Artesanal
           </span>
-          <h1 className="font-serif text-3xl sm:text-5xl md:text-7xl text-white mb-3 sm:mb-6 drop-shadow-xl">
+          <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-white mb-3 sm:mb-4 drop-shadow-xl">
             Nuestro Catálogo
           </h1>
-          <p className="text-white/90 text-sm sm:text-lg md:text-xl font-light max-w-xl mx-auto mb-5 sm:mb-8">
-            Descubrí el sabor de lo hecho a mano. Elegí tus favoritos y retiralos frescos por el local.
+          <p className="text-white/90 text-sm sm:text-base font-light max-w-lg mx-auto mb-4">
+            Elegí tus favoritos y retiralos frescos por el local.
           </p>
-          <div className="w-16 sm:w-24 h-px bg-[#E0C89A] mx-auto"></div>
+          <div className="w-16 sm:w-20 h-px bg-[#E0C89A] mx-auto"></div>
         </div>
       </section>
 
-      <section style={woodCatalog} className="py-8 sm:py-12 min-h-screen bg-parallax">
+      {/* CATÁLOGO — slides up over hero */}
+      <section style={woodCatalog} className="relative z-10 py-8 sm:py-12 min-h-screen bg-parallax shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col lg:flex-row lg:gap-8">
 
-            {/* MOBILE: pills horizontales con scroll */}
+            {/* MOBILE: pills con ícono */}
             <div className="lg:hidden mb-6 -mx-4 px-4">
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {CATEGORIES.map((cat) => {
                   const active = categoria === cat.value
+                  const Icon = cat.icon
                   return (
                     <Link
                       key={cat.value}
                       href={buildUrl({ categoria: cat.value, page: 1 })}
-                      className={`shrink-0 px-4 py-2 rounded-full text-sm transition border ${
+                      className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm transition border ${
                         active
                           ? 'bg-[#2B0F0B] text-white border-[#2B0F0B] font-semibold'
                           : 'bg-white/10 text-white/80 border-white/20 hover:bg-white/20'
                       }`}
                     >
+                      <Icon size={14} />
                       {cat.label}
                     </Link>
                   )
@@ -216,11 +210,10 @@ export default async function ProductosPage({ searchParams }) {
               </div>
             </div>
 
-            {/* DESKTOP: sidebar con hover + tarjetas decorativas */}
+            {/* DESKTOP: sidebar con íconos + hover */}
             <aside className="hidden lg:block w-64 flex-shrink-0">
               <div className="sticky top-24 space-y-4">
 
-                {/* Categorías */}
                 <div className="bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-xl border border-white/40">
                   <h2 className="font-serif text-lg text-[#2B0F0B] mb-3 pb-3 border-b border-gray-200">
                     Categorías
@@ -228,6 +221,7 @@ export default async function ProductosPage({ searchParams }) {
                   <ul className="space-y-1">
                     {CATEGORIES.map((cat) => {
                       const active = categoria === cat.value
+                      const Icon = cat.icon
                       return (
                         <li key={cat.value}>
                           <Link
@@ -238,7 +232,10 @@ export default async function ProductosPage({ searchParams }) {
                                 : 'text-gray-600 hover:bg-[#EADFC8] hover:text-[#2B0F0B] hover:pl-4'
                             }`}
                           >
-                            <span>{cat.label}</span>
+                            <span className="flex items-center gap-2">
+                              <Icon size={15} className={active ? 'text-[#E0C89A]' : 'text-[#C9A96E]'} />
+                              {cat.label}
+                            </span>
                             <ChevronRight
                               size={14}
                               className={`transition-all ${
@@ -254,7 +251,6 @@ export default async function ProductosPage({ searchParams }) {
                   </ul>
                 </div>
 
-                {/* Card decorativa: CTA Lunch */}
                 <div
                   className="rounded-2xl overflow-hidden shadow-xl border border-white/40"
                   style={{
@@ -268,21 +264,13 @@ export default async function ProductosPage({ searchParams }) {
                     <span className="text-[#E0C89A] text-[9px] uppercase tracking-[0.2em] font-bold block mb-2">
                       ¿Algo especial?
                     </span>
-                    <h3 className="font-serif text-lg mb-2 leading-tight">
-                      Combos para eventos
-                    </h3>
+                    <h3 className="font-serif text-lg mb-2 leading-tight">Combos para eventos</h3>
                     <p className="text-white/70 text-xs mb-4 leading-relaxed">
                       Bandejas a medida para reuniones, cumpleaños y oficinas.
                     </p>
-                    <Link
-                      href="/lunch-eventos"
-                      className="inline-flex items-center gap-1 text-[#E0C89A] text-xs font-semibold border-b border-[#E0C89A]/50 pb-0.5 hover:text-white hover:border-white transition group"
-                    >
+                    <Link href="/lunch-eventos" className="inline-flex items-center gap-1 text-[#E0C89A] text-xs font-semibold border-b border-[#E0C89A]/50 pb-0.5 hover:text-white hover:border-white transition group">
                       Ver combos
-                      <ArrowRight
-                        size={12}
-                        className="transition-transform group-hover:translate-x-0.5"
-                      />
+                      <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </div>
                 </div>
@@ -291,17 +279,13 @@ export default async function ProductosPage({ searchParams }) {
             </aside>
 
             <div className="flex-1 min-w-0">
-              <Suspense
-                fallback={
-                  <p className="text-white/70 animate-pulse">Cargando productos...</p>
-                }
-              >
+              <Suspense fallback={<p className="text-white/70 animate-pulse">Cargando productos...</p>}>
                 <ProductosGrid categoria={categoria} page={page} />
               </Suspense>
             </div>
           </div>
         </div>
       </section>
-    </>
+    </div>
   )
 }
