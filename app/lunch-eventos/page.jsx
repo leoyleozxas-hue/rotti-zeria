@@ -2,43 +2,61 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowRight, Briefcase, Cake, UtensilsCrossed } from 'lucide-react'
+import { getSettings } from '@/lib/settings'
+import { ArrowRight, Mail, Phone } from 'lucide-react'
 import LunchGrid from '@/components/LunchGrid'
+import ServiciosCarousel from '@/components/ServiciosCarousel'
 
-const woodHorizontal = {
+const woodSticky = {
   backgroundImage:
-    "linear-gradient(rgba(18,4,2,.78), rgba(18,4,2,.88)), url('/images/textura-madera.png')",
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-}
-
-const woodVertical = {
-  backgroundImage:
-    "linear-gradient(rgba(18,4,2,.75), rgba(18,4,2,.88)), url('/images/textura-madera-vertical.png')",
+    "linear-gradient(rgba(18,4,2,.82), rgba(18,4,2,.92)), url('/images/textura-madera-vertical.png')",
   backgroundSize: 'cover',
   backgroundPosition: 'center top',
 }
 
+const woodHorizontal = {
+  backgroundImage:
+    "linear-gradient(rgba(18,4,2,.78), rgba(18,4,2,.92)), url('/images/textura-madera.png')",
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+}
+
 const SERVICIOS = [
   {
-    icon: Briefcase,
+    index: '01',
     title: 'Coffee break & oficina',
     desc: 'Facturas, medialunas, jugos y bandejas para reuniones de trabajo.',
+    src: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=1600&q=80',
+    alt: 'Bandeja de medialunas y facturas para un coffee break',
+    className: 'md:col-span-7 md:row-span-2',
   },
   {
-    icon: Cake,
+    index: '02',
     title: 'Cumpleaños y celebraciones',
     desc: 'Mesas dulces, sánguches de miga y bocados calientes para armar la mesa.',
+    src: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?auto=format&fit=crop&w=1400&q=80',
+    alt: 'Mesa dulce para un cumpleaños',
+    className: 'md:col-span-5',
   },
   {
-    icon: UtensilsCrossed,
+    index: '03',
     title: 'Catering completo',
     desc: 'Servicio de mozos, mantelería y armado completo del evento.',
+    src: 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1400&q=80',
+    alt: 'Mesa de catering servida',
+    className: 'md:col-span-5',
   },
+]
+
+const PASOS = [
+  { n: '01', t: 'Contanos', d: 'Fecha, cantidad de personas y si es oficina, cumple o evento.' },
+  { n: '02', t: 'Armamos', d: 'Te pasamos opciones con el mismo horno de siempre.' },
+  { n: '03', t: 'Llegamos', d: 'Retirás en el local o lo enviamos listo para servir.' },
 ]
 
 export default async function LunchEventosPage() {
   const supabase = await createClient()
+  const settings = await getSettings()
 
   const { data: lunches } = await supabase
     .from('products')
@@ -56,7 +74,7 @@ export default async function LunchEventosPage() {
 
   return (
     <>
-      {/* HERO — full-screen, texto abajo siempre */}
+      {/* HERO */}
       <section className="relative min-h-[100svh] flex items-end text-white overflow-hidden -mt-[6.75rem]">
         <Image
           src="https://images.unsplash.com/photo-1555244162-803834f70033?w=1920&q=85"
@@ -69,11 +87,7 @@ export default async function LunchEventosPage() {
         <div
           aria-hidden
           className="absolute inset-0 mix-blend-multiply opacity-60"
-          style={{
-            backgroundImage: "url('/images/textura-madera-vertical.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center top',
-          }}
+          style={{ backgroundImage: "url('/images/textura-madera-vertical.png')", backgroundSize: 'cover', backgroundPosition: 'center top' }}
         />
         <div
           aria-hidden
@@ -108,116 +122,106 @@ export default async function LunchEventosPage() {
         </div>
       </section>
 
-      {/* WRAPPER — fondo crema */}
-      <div className="relative bg-[#FAF7F2]">
+      {/* WRAPPER del parallax */}
+      <div className="relative">
 
-        {/* QUÉ ARMAMOS — sticky wrapper con margen crema siempre visible */}
-        <section className="sticky top-[6.75rem] z-0 bg-[#FAF7F2] py-6 md:py-8">
-          <div
-            className="relative overflow-hidden"
-            style={woodHorizontal}
-          >
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14">
-              <div className="text-center mb-10 anim-rise">
-                <span className="text-[#E0C89A] text-xs uppercase tracking-[0.3em] font-bold block mb-3">
+        {/* QUÉ ARMAMOS */}
+        <section
+          className="relative z-0 flex flex-col text-white md:sticky md:top-0 md:min-h-[100svh] md:pt-[6.75rem]"
+          style={woodSticky}
+        >
+          <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-4 sm:px-6 pt-16 pb-16 md:pt-2 md:pb-24">
+            <div className="flex items-end justify-between gap-6 mb-6 md:mb-4">
+              <div>
+                <span className="text-[#E0C89A] text-xs uppercase tracking-[0.3em] font-bold block mb-2">
                   Servicios
                 </span>
-                <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl mb-3 text-white">
-                  Qué armamos
-                </h2>
-                <p className="text-white/70 max-w-lg mx-auto">
+                <h2 className="font-serif text-4xl md:text-5xl text-white">Qué armamos</h2>
+                <p className="mt-2 max-w-xs text-sm text-white/70 md:hidden">
                   El mismo horno de siempre, pensado para tu mesa.
                 </p>
               </div>
+              <p className="hidden max-w-xs text-right text-sm text-white/70 md:block">
+                El mismo horno de siempre, pensado para tu mesa.
+              </p>
+            </div>
 
-              {/* Mobile: carrusel */}
-              <div className="md:hidden -mx-4 px-4 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide">
-                {SERVICIOS.map(({ icon: Icon, title, desc }) => (
-                  <div
-                    key={title}
-                    className="relative snap-start shrink-0 w-[80vw] max-w-[320px] bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 overflow-hidden"
-                  >
-                    {/* Watermark ícono esquina */}
-                    <Icon
-                      size={100}
-                      aria-hidden
-                      className="absolute -top-4 -right-4 text-white/[0.06] pointer-events-none"
-                    />
+            {/* MOBILE: carrusel horizontal con dots y auto-avance */}
+            <div className="md:hidden">
+              <ServiciosCarousel servicios={SERVICIOS} />
+            </div>
 
-                    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#E0C89A]/20 border border-[#E0C89A]/40 text-[#E0C89A] mb-5">
-                      <Icon size={22} />
-                    </span>
-                    <h3 className="relative font-serif text-lg mb-2 text-white">{title}</h3>
-                    <p className="relative text-sm text-white/70 leading-relaxed">{desc}</p>
+            {/* DESKTOP: grid editorial sticky */}
+            <div className="hidden md:grid md:grid-cols-12 md:grid-rows-2 gap-3 flex-1 md:min-h-0">
+              {SERVICIOS.map(({ index, title, desc, src, alt, className }) => (
+                <article
+                  key={index}
+                  className={`group relative overflow-hidden rounded-2xl md:h-full ${className}`}
+                >
+                  <Image
+                    src={src}
+                    alt={alt}
+                    fill
+                    className="object-cover transition duration-700 ease-out group-hover:scale-[1.04]"
+                    sizes="50vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a0806] via-[#1a0806]/35 to-[#1a0806]/10" />
+                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-6 pb-6 md:pb-8">
+                    <span className="font-serif text-sm text-[#E0C89A]">{index}</span>
+                    <h3 className="mt-1 max-w-sm font-serif text-2xl md:text-3xl leading-tight text-white">
+                      {title}
+                    </h3>
+                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/75">{desc}</p>
                   </div>
-                ))}
-              </div>
-
-              {/* Desktop: grid 3 columnas */}
-              <div className="hidden md:grid md:grid-cols-3 gap-5">
-                {SERVICIOS.map(({ icon: Icon, title, desc }, i) => (
-                  <div
-                    key={title}
-                    style={{ animationDelay: `${i * 100}ms` }}
-                    className="anim-rise relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 overflow-hidden hover:bg-white/15 hover:border-white/40 hover:-translate-y-1 transition-all duration-300"
-                  >
-                    {/* Watermark ícono esquina */}
-                    <Icon
-                      size={120}
-                      aria-hidden
-                      className="absolute -top-4 -right-4 text-white/[0.06] pointer-events-none"
-                    />
-
-                    <span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#E0C89A]/20 border border-[#E0C89A]/40 text-[#E0C89A] mb-5">
-                      <Icon size={22} />
-                    </span>
-                    <h3 className="relative font-serif text-xl mb-2 text-white">{title}</h3>
-                    <p className="relative text-sm text-white/70 leading-relaxed">{desc}</p>
-                  </div>
-                ))}
-              </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* LUNCH — sin border radius */}
+        {/* SPACER — solo desktop para dar tiempo al parallax */}
+        <div
+          className="hidden md:block md:h-[50vh]"
+          style={woodSticky}
+          aria-hidden="true"
+        />
+
+        {/* LUNCH — sube con sombra */}
         <section
           id="lunch"
-          className="relative z-10 bg-[#FAF7F2] shadow-[0_-20px_50px_rgba(0,0,0,0.3)] scroll-mt-24"
+          className="relative z-10 bg-[#FAF7F2] shadow-[0_-32px_70px_rgba(20,8,6,0.45)] scroll-mt-24 -mt-8 md:mt-0"
         >
           <div className="max-w-5xl mx-auto px-4 py-16 md:py-24">
-            <div className="text-center mb-12">
-              <span className="text-[#C9A96E] text-xs uppercase tracking-[0.3em] font-bold block mb-3">
-                Lunch
-              </span>
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#2B0F0B] mb-3">
-                Lunch para Oficinas
-              </h2>
-              <p className="text-[#6b3a2c]">
-                Viandas y bandejas listas para retirar o enviar.
-              </p>
+            <div className="mb-10 md:mb-14 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-xl">
+                <span className="text-[#C9A96E] text-xs uppercase tracking-[0.3em] font-bold block mb-2">
+                  Lunch
+                </span>
+                <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#2B0F0B]">
+                  Lunch para Oficinas
+                </h2>
+                <p className="mt-3 text-[#6b3a2c]">
+                  Viandas y bandejas listas para retirar o enviar.
+                </p>
+              </div>
+              <Link
+                href="/productos?categoria=Lunch"
+                className="inline-flex items-center gap-2 self-start text-[#2B0F0B] border-b-2 border-[#2B0F0B] pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition font-medium text-sm sm:text-base group"
+              >
+                Ver todos los combos
+                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition" />
+              </Link>
             </div>
 
             {lunches && lunches.length > 0 ? (
-              <>
-                <LunchGrid lunches={lunches} />
-                <div className="flex justify-end mt-10">
-                  <Link
-                    href="/productos?categoria=Lunch"
-                    className="inline-flex items-center gap-2 text-[#2B0F0B] border-b-2 border-[#2B0F0B] pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition font-medium text-sm sm:text-base group"
-                  >
-                    Ver todos los combos
-                    <ArrowRight size={16} className="group-hover:translate-x-0.5 transition" />
-                  </Link>
-                </div>
-              </>
+              <LunchGrid lunches={lunches} />
             ) : (
               <p className="text-center text-[#6b3a2c]">Pronto vas a ver los combos disponibles.</p>
             )}
           </div>
         </section>
 
-        {/* CATERING — sin border radius */}
+        {/* CATERING */}
         {eventos && eventos.length > 0 && (
           <section className="relative z-10 bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.2)] py-16 md:py-24">
             <div className="max-w-5xl mx-auto px-4">
@@ -265,25 +269,102 @@ export default async function LunchEventosPage() {
           </section>
         )}
 
-        {/* CTA FINAL — sin border radius */}
+        {/* PRESUPUESTO */}
         <section
-          className="relative z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] overflow-hidden"
-          style={woodVertical}
           id="contacto-eventos"
+          className="relative z-20 text-white shadow-[0_-32px_70px_rgba(20,8,6,0.5)] scroll-mt-24"
+          style={woodSticky}
         >
-          <div className="max-w-3xl mx-auto px-4 py-20 md:py-28 text-center text-white">
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-6xl mb-5 drop-shadow-md">
-              Pedí tu presupuesto
-            </h2>
-            <p className="text-white/80 mb-8 max-w-md mx-auto text-base sm:text-lg font-light">
-              Escribinos por WhatsApp o el formulario de contacto y te respondemos con opciones y tiempos de entrega.
-            </p>
-            <Link
-              href="/contacto"
-              className="inline-flex items-center gap-2 bg-[#F5EDE3] text-[#2b0f0b] px-8 py-4 rounded-full font-semibold hover:bg-white transition shadow-lg"
-            >
-              Ir a contacto <ArrowRight size={18} />
-            </Link>
+          <div className="relative h-56 md:h-80 overflow-hidden">
+            <Image
+              src="https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1920&q=80"
+              alt=""
+              fill
+              className="object-cover object-[center_55%]"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#1a0806]/10 via-[#1a0806]/45 to-[#1a0806]" />
+          </div>
+
+          <div className="max-w-6xl mx-auto grid gap-12 px-4 sm:px-6 pt-10 md:pt-14 pb-20 md:pb-28 md:grid-cols-12">
+            <div className="md:col-span-7">
+              <span className="text-[#E0C89A] text-xs uppercase tracking-[0.3em] font-bold block mb-3">
+                Presupuesto
+              </span>
+              <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl leading-[1.05] max-w-xl">
+                Pedí tu presupuesto
+              </h2>
+              <p className="mt-5 max-w-md text-base sm:text-lg font-light text-white/75">
+                Escribinos por WhatsApp o el formulario de contacto y te respondemos con opciones y tiempos de entrega.
+              </p>
+              <ol className="mt-10 grid gap-8 sm:grid-cols-3">
+                {PASOS.map((paso) => (
+                  <li key={paso.n} className="border-t border-white/15 pt-4">
+                    <span className="font-serif text-sm text-[#E0C89A]">{paso.n}</span>
+                    <p className="mt-3 font-serif text-2xl">{paso.t}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-white/70">{paso.d}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <aside className="md:col-span-5">
+              <div className="rounded-3xl bg-[#fffdf8] p-1.5 text-[#2B0F0B] shadow-2xl">
+                <div className="rounded-[1.25rem] border border-dashed border-[#C9A96E]/70 px-6 py-7 md:px-7">
+                  <span className="text-[#C9A96E] text-xs uppercase tracking-[0.3em] font-bold block mb-3">
+                    Nota de pedido
+                  </span>
+                  <h3 className="font-serif text-3xl">Te respondemos hoy</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-[#6b3a2c]">
+                    Sin compromiso. En el día hábil, con lo que hay en el horno.
+                  </p>
+
+                  <ul className="mt-6 divide-y divide-[#EADFC8]">
+                    {settings.email && (
+                      <li>
+                        <a
+                          href={`mailto:${settings.email}?subject=Presupuesto%20Lunch%20y%20eventos`}
+                          className="flex items-center gap-3 py-3 text-sm"
+                        >
+                          <Mail size={18} className="text-[#C9A96E] shrink-0" />
+                          <span>
+                            <span className="block font-medium">Mail</span>
+                            <span className="text-[#6b3a2c] break-all">{settings.email}</span>
+                          </span>
+                        </a>
+                      </li>
+                    )}
+                    {settings.phone && (
+                      <li>
+                        <a
+                          href={`tel:${settings.phone.replace(/\s/g, '')}`}
+                          className="flex items-center gap-3 py-3 text-sm"
+                        >
+                          <Phone size={18} className="text-[#C9A96E] shrink-0" />
+                          <span>
+                            <span className="block font-medium">Teléfono</span>
+                            <span className="text-[#6b3a2c]">{settings.phone}</span>
+                          </span>
+                        </a>
+                      </li>
+                    )}
+                  </ul>
+
+                  <Link
+                    href="/contacto"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2B0F0B] px-6 py-3.5 font-semibold text-[#F5EDE3] hover:bg-[#24110d] transition"
+                  >
+                    Ir a contacto
+                    <ArrowRight size={16} />
+                  </Link>
+                  <p className="mt-4 text-center text-xs leading-relaxed text-[#9a8b7a]">
+                    {settings.address}
+                    <br />
+                    {settings.hours.weekdays}
+                  </p>
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
 
