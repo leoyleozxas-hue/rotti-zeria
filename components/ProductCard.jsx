@@ -7,13 +7,14 @@ import { Plus, Heart } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useFavoritesStore } from '@/lib/store/favoritesStore'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem)
   const toggleFav = useFavoritesStore((s) => s.toggle)
   const isFavorite = useFavoritesStore((s) => (product ? s.isFavorite(product.id) : false))
   const [mounted, setMounted] = useState(false)
+  const cardRef = useRef(null)
 
   useEffect(() => {
     setMounted(true)
@@ -36,22 +37,51 @@ export default function ProductCard({ product }) {
     })
   }
 
+  function handleMouseMove(e) {
+    if (!cardRef.current) return
+    if (typeof window === 'undefined') return
+    if (window.matchMedia('(hover: none)').matches) return
+
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = ((y - centerY) / centerY) * -5
+    const rotateY = ((x - centerX) / centerX) * 5
+
+    cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`
+  }
+
+  function handleMouseLeave() {
+    if (!cardRef.current) return
+    cardRef.current.style.transform =
+      'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)'
+  }
+
   const heartClass =
     mounted && isFavorite
       ? 'fill-red-500 text-red-500'
       : 'text-gray-400 group-hover:text-red-400'
 
+  // Solo la primera línea (antes del \n) → corta las listas de combos
+  const shortDescription = (product.description || '').split('\n')[0].trim()
+
   return (
     <Link
+      ref={cardRef}
       href={`/productos/${product.id}`}
-      className="group relative flex flex-col bg-[#FCFAF8] rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-[#EADFC8] hover:border-[#C9A96E]"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="tilt-card group relative flex flex-col h-full bg-[#FCFAF8] overflow-hidden shadow-sm hover:shadow-2xl transition-shadow duration-300 border border-[#EADFC8] hover:border-[#C9A96E]"
     >
       {product.category === 'Facturas' && (
-        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 bg-[#C9A96E] text-[#2b0f0b] text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-md">
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-[#C9A96E] text-[#2b0f0b] text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-3 py-0.5 sm:py-1 shadow-md">
           Más vendido
         </div>
       )}
 
+      {/* Corazón circular */}
       <button
         onClick={handleFavorite}
         className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:scale-110 transition"
@@ -60,7 +90,8 @@ export default function ProductCard({ product }) {
         <Heart size={16} className={`transition ${heartClass}`} />
       </button>
 
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      {/* Imagen: altura fija para que todas midan igual */}
+      <div className="relative aspect-square overflow-hidden bg-gray-100 shrink-0">
         {product.image_url ? (
           <Image
             src={product.image_url}
@@ -76,25 +107,30 @@ export default function ProductCard({ product }) {
         )}
       </div>
 
-      <div className="p-3 sm:p-5 flex flex-col flex-1">
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#9a8b7a] mb-1 font-semibold">
+      {/* Contenido: flex-1 para empujar el footer abajo */}
+      <div className="p-3 sm:p-5 flex flex-col flex-1 min-h-0">
+        <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#9a8b7a] mb-1 font-semibold shrink-0">
           {product.category}
         </span>
-        <h3 className="font-serif text-sm sm:text-lg text-[#2B0F0B] mb-1 sm:mb-2 leading-tight group-hover:text-[#5a1a10] transition font-semibold line-clamp-2">
+
+        {/* Título: 2 líneas fijas */}
+        <h3 className="font-serif text-sm sm:text-lg text-[#2B0F0B] mb-1 sm:mb-2 leading-tight group-hover:text-[#5a1a10] transition font-semibold line-clamp-2 shrink-0">
           {product.name}
         </h3>
-        <p className="hidden sm:block text-sm text-gray-500 mb-4 line-clamp-2 flex-1">
-          {product.description}
+
+        {/* Descripción: 2 líneas máximo (o vacío si es mobile) */}
+        <p className="hidden sm:block text-sm text-gray-500 mb-4 line-clamp-2">
+          {shortDescription}
         </p>
 
-        {/* Precio + Botón */}
+        {/* Footer: mt-auto lo pinea al fondo */}
         <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-serif text-base sm:text-xl text-[#2B0F0B] font-bold">
             ${Number(product.price).toLocaleString('es-AR')}
           </span>
           <button
             onClick={handleAddToCart}
-            className="flex items-center justify-center gap-1 bg-[#2B0F0B] text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium hover:bg-[#5a1a10] transition active:scale-95 shadow-md w-full sm:w-auto"
+            className="flex items-center justify-center gap-1 bg-[#2B0F0B] text-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium hover:bg-[#5a1a10] transition active:scale-95 shadow-md w-full sm:w-auto"
           >
             <Plus size={14} />
             Agregar

@@ -7,11 +7,13 @@ import { useRouter } from 'next/navigation'
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cartStore'
 import { useUIStore } from '@/lib/store/uiStore'
+import useHydrated from '@/lib/hooks/useHydrated'
 
 export default function CartDrawer() {
   const router = useRouter()
   const { isCartOpen, closeCart } = useUIStore()
   const { items, removeItem, updateQuantity, getTotal, clearCart, getCount } = useCartStore()
+  const mounted = useHydrated()
 
   const itemCount = getCount()
 
@@ -19,7 +21,9 @@ export default function CartDrawer() {
   useEffect(() => {
     if (isCartOpen) document.body.style.overflow = 'hidden'
     else document.body.style.overflow = 'unset'
-    return () => { document.body.style.overflow = 'unset' }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
   }, [isCartOpen])
 
   const handleCheckout = () => {
@@ -43,12 +47,12 @@ export default function CartDrawer() {
           isCartOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Cabecera con contador */}
+        {/* Cabecera con contador — solo después de hidratar */}
         <div className="flex items-center justify-between p-6 border-b border-[#EADFC8]">
           <h2 className="font-serif text-2xl text-[#2B0F0B] flex items-center gap-2">
             <ShoppingBag size={22} className="text-[#C9A96E]" />
             Tu pedido
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="text-base font-normal text-[#9a8b7a]">
                 ({itemCount})
               </span>
@@ -63,9 +67,12 @@ export default function CartDrawer() {
           </button>
         </div>
 
-        {/* Lista */}
+        {/* Lista — solo renderizamos contenido después de hidratar */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {items.length === 0 ? (
+          {!mounted ? (
+            // Placeholder vacío — evita el mismatch entre server y cliente
+            <div className="py-16" />
+          ) : items.length === 0 ? (
             <div className="text-center py-16 flex flex-col items-center">
               <div className="w-20 h-20 rounded-full bg-[#EADFC8]/50 flex items-center justify-center mb-5">
                 <ShoppingBag size={32} className="text-[#C9A96E]" />
@@ -161,8 +168,8 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* Footer */}
-        {items.length > 0 && (
+        {/* Footer — solo después de hidratar y con items */}
+        {mounted && items.length > 0 && (
           <div className="p-6 bg-white border-t border-[#EADFC8] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
             <div className="flex justify-between items-end mb-6">
               <span className="text-[#6b3a2c]">Total estimado</span>

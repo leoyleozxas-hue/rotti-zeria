@@ -13,7 +13,6 @@ export default function LunchGrid({ lunches }) {
   const [mounted, setMounted] = useState(false)
   const addItem = useCartStore((s) => s.addItem)
 
-  // Bloquear scroll
   useEffect(() => {
     if (selected) {
       document.body.style.overflow = 'hidden'
@@ -25,7 +24,6 @@ export default function LunchGrid({ lunches }) {
     }
   }, [selected])
 
-  // Animación de entrada
   useEffect(() => {
     if (selected && !closing) {
       const t = setTimeout(() => setMounted(true), 10)
@@ -33,7 +31,6 @@ export default function LunchGrid({ lunches }) {
     }
   }, [selected, closing])
 
-  // ESC para cerrar
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') handleClose()
@@ -66,8 +63,8 @@ export default function LunchGrid({ lunches }) {
 
   return (
     <>
-      {/* Grid de cards */}
-      <div className="grid md:grid-cols-3 gap-5">
+      {/* Grid: items-start → cada card mide lo suyo, NO se estiran */}
+      <div className="grid md:grid-cols-3 gap-5 items-start">
         {lunches.map((combo, i) => (
           <button
             key={combo.id}
@@ -76,28 +73,33 @@ export default function LunchGrid({ lunches }) {
             style={{ animationDelay: `${i * 80}ms` }}
             className="anim-rise group text-left border border-[#EADFC8] bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1.5 hover:border-[#C9A96E] transition-all duration-300 flex flex-col"
           >
-            {combo.image_url && (
-              <div className="relative h-48 w-full bg-[#EADFC8] overflow-hidden">
-                <Image
-                  src={combo.image_url}
-                  alt={combo.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-                <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-[#2B0F0B] opacity-0 group-hover:opacity-100 transition shadow-md">
-                  <ArrowUpRight size={16} />
-                </div>
-              </div>
-            )}
-            <div className="p-5 flex flex-col flex-1">
-              <h3 className="font-serif text-xl text-[#2B0F0B] mb-2 group-hover:text-[#5a1a10] transition">
+            {/* Imagen: altura fija */}
+            <div className="relative h-40 w-full shrink-0 bg-[#EADFC8] overflow-hidden">
+              {combo.image_url && (
+                <>
+                  <Image
+                    src={combo.image_url}
+                    alt={combo.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                  <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-[#2B0F0B] opacity-0 group-hover:opacity-100 transition shadow-md">
+                    <ArrowUpRight size={16} />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Contenido: SIN flex-1, SIN h-full. Altura natural. */}
+            <div className="p-4">
+              <h3 className="font-serif text-lg text-[#2B0F0B] mb-1.5 group-hover:text-[#5a1a10] transition line-clamp-2">
                 {combo.name}
               </h3>
-              <p className="text-sm text-gray-600 mb-4 line-clamp-3 flex-1 leading-relaxed">
+              <p className="text-sm text-gray-600 mb-3 line-clamp-3 leading-snug">
                 {combo.description}
               </p>
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <p className="text-lg font-bold text-[#2B0F0B]">
                   ${Number(combo.price).toLocaleString('es-AR')}
                 </p>
@@ -120,23 +122,18 @@ export default function LunchGrid({ lunches }) {
           role="dialog"
           aria-modal="true"
         >
-          {/* Overlay con tinte cálido */}
           <div
             className="absolute inset-0 bg-gradient-to-br from-[#2B0F0B]/90 via-black/80 to-[#C9A96E]/30 backdrop-blur-md"
             onClick={handleClose}
           />
 
-          {/* Panel */}
           <div
             className={`relative bg-[#FAF7F2] max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[0_30px_80px_rgba(0,0,0,0.7)] transition-all duration-250 ${
               mounted ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
             }`}
-            style={{
-              borderTop: '3px solid #C9A96E',
-            }}
+            style={{ borderTop: '3px solid #C9A96E' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header del modal con degradé cálido */}
             <div className="sticky top-0 z-10 bg-gradient-to-r from-[#2B0F0B] via-[#3a130d] to-[#2B0F0B] px-5 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingBag size={16} className="text-[#E0C89A]" />
@@ -153,7 +150,6 @@ export default function LunchGrid({ lunches }) {
               </button>
             </div>
 
-            {/* Imagen */}
             {selected.image_url && (
               <div className="relative w-full h-56 sm:h-64 bg-[#EADFC8]">
                 <Image
@@ -166,7 +162,6 @@ export default function LunchGrid({ lunches }) {
               </div>
             )}
 
-            {/* Contenido */}
             <div className="p-6 sm:p-8">
               <h2 className="font-serif text-2xl sm:text-3xl text-[#2B0F0B] mb-4">
                 {selected.name}

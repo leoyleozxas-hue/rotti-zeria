@@ -69,7 +69,6 @@ async function getDashboardData() {
     ['pending_payment', 'payment_review'].includes(o.status)
   )
 
-  // Pedidos a retirar hoy (la pantalla que se imprime en la cocina).
   const isoToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
     today.getDate()
   ).padStart(2, '0')}`
@@ -82,7 +81,6 @@ async function getDashboardData() {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 6)
 
-  // Más vendidos de la última semana, a partir de los ítems de esos pedidos.
   const weekIds = weekList.map((o) => o.id)
   let topProducts = []
   if (weekIds.length) {
@@ -159,7 +157,7 @@ function MetricCard({ label, data, previous, compareLabel, icon: Icon, index }) 
         </div>
         <span
           aria-hidden
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold-soft"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold-soft"
         >
           <Icon size={15} />
         </span>
@@ -171,7 +169,7 @@ function MetricCard({ label, data, previous, compareLabel, icon: Icon, index }) 
         </span>
         <span className="flex items-center gap-1.5">
           <Delta current={data.revenue} previous={previous?.revenue} />
-          <span className="text-[10px] text-white/25">{compareLabel}</span>
+          <span className="hidden text-[10px] text-white/25 sm:inline">{compareLabel}</span>
         </span>
       </div>
     </Panel>
@@ -194,37 +192,38 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-5 md:space-y-6">
       <PageHeader
         eyebrow="Resumen"
         title="Dashboard"
         description="Cómo viene el día, qué hay que preparar y qué se está vendiendo."
         actions={
-          <ButtonLink href="/admin/productos/nuevo" variant="secondary" size="md">
+          <ButtonLink href="/admin/productos/nuevo" variant="secondary" size="md" className="w-full sm:w-auto">
             <Plus size={16} aria-hidden />
             Nuevo producto
           </ButtonLink>
         }
       />
 
-      {/* Lo que pide acción va arriba de todo */}
+      {/* Alerta de pendientes */}
       {data.pendingCount > 0 && (
         <Link
           href="/admin/pedidos?estado=new"
-          className="anim-rise group flex items-center gap-4 rounded-card border border-pending/35 bg-gradient-to-r from-pending/18 to-transparent p-4 transition hover:border-pending/60 hover:from-pending/25"
+          className="anim-rise group flex items-center gap-3 rounded-card border border-pending/35 bg-gradient-to-r from-pending/18 to-transparent p-3.5 md:gap-4 md:p-4 transition hover:border-pending/60 hover:from-pending/25"
         >
           <span
             aria-hidden
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-pending/40 bg-pending/20 text-pending"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-pending/40 bg-pending/20 text-pending md:h-11 md:w-11"
           >
-            <Clock size={19} />
+            <Clock size={17} className="md:hidden" />
+            <Clock size={19} className="hidden md:block" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-white">
+            <p className="text-sm font-medium text-white md:text-base">
               {data.pendingCount} {data.pendingCount === 1 ? 'pedido espera' : 'pedidos esperan'}{' '}
               confirmación
             </p>
-            <p className="mt-0.5 text-xs text-pending/70">
+            <p className="mt-0.5 hidden text-xs text-pending/70 md:block">
               Sin confirmar no se prepara: son los que más demoran al cliente.
             </p>
           </div>
@@ -237,7 +236,7 @@ export default async function AdminDashboard() {
       )}
 
       {/* Métricas */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 xl:grid-cols-4">
         <MetricCard
           index={0}
           label="Hoy"
@@ -248,10 +247,10 @@ export default async function AdminDashboard() {
         />
         <MetricCard
           index={1}
-          label="Últimos 7 días"
+          label="7 días"
           data={data.week}
           previous={data.prevWeek}
-          compareLabel="vs semana previa"
+          compareLabel="vs sem. previa"
           icon={TrendingUp}
         />
         <MetricCard
@@ -266,7 +265,7 @@ export default async function AdminDashboard() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-soft/70">
-                Ticket promedio
+                Ticket prom.
               </p>
               <p className="tabular mt-2 font-serif text-2xl leading-none text-white md:text-3xl">
                 {money(data.avgTicket)}
@@ -274,13 +273,13 @@ export default async function AdminDashboard() {
             </div>
             <span
               aria-hidden
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold-soft"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gold-soft"
             >
               <Package size={15} />
             </span>
           </div>
           <p className="mt-4 border-t border-white/8 pt-3 text-xs text-white/45">
-            Promedio de los últimos 7 días
+            Últimos 7 días
           </p>
         </Panel>
       </div>
@@ -309,7 +308,7 @@ export default async function AdminDashboard() {
                 <li key={order.id}>
                   <Link
                     href={`/admin/pedidos/${order.id}`}
-                    className="flex items-center gap-3 px-5 py-3 transition hover:bg-white/[0.04]"
+                    className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/[0.04] md:px-5"
                   >
                     <span className="tabular w-12 shrink-0 rounded-md border border-white/10 bg-ink-950/60 py-1 text-center text-[11px] font-semibold text-gold-soft">
                       {order.pickup_time || '—'}
@@ -346,9 +345,9 @@ export default async function AdminDashboard() {
                 const max = data.topProducts[0].quantity || 1
                 const width = Math.max(6, Math.round((product.quantity / max) * 100))
                 return (
-                  <li key={product.name} className="px-5 py-3">
+                  <li key={product.name} className="px-4 py-3 md:px-5">
                     <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                      <span className="truncate text-sm text-white/85">
+                      <span className="min-w-0 truncate text-sm text-white/85">
                         <span className="tabular mr-2 text-[11px] text-white/30">
                           {String(index + 1).padStart(2, '0')}
                         </span>
@@ -394,45 +393,74 @@ export default async function AdminDashboard() {
             description="Cuando entre el primero, aparece acá con su estado."
           />
         ) : (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full text-sm" style={{ minWidth: '620px' }}>
-              <thead>
-                <tr className="border-b border-white/8">
-                  {['Nro.', 'Cliente', 'Total', 'Estado'].map((label, i) => (
-                    <th
-                      key={label}
-                      scope="col"
-                      className={`px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35 ${
-                        i === 2 ? 'text-right' : 'text-left'
-                      }`}
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.recent.map((order, index) => (
-                  <tr
-                    key={order.id || index}
-                    className="anim-rise border-b border-white/5 transition-colors last:border-0 hover:bg-white/[0.035]"
-                    style={{ '--i': index }}
-                  >
-                    <td className="px-5 py-3 font-mono text-xs font-semibold text-gold-soft">
+          <>
+            {/* MOBILE: cards apiladas */}
+            <div className="divide-y divide-white/6 md:hidden">
+              {data.recent.map((order) => (
+                <Link
+                  key={order.id}
+                  href={`/admin/pedidos/${order.id}`}
+                  className="block px-4 py-3 transition hover:bg-white/[0.04]"
+                >
+                  <div className="mb-1.5 flex items-start justify-between gap-3">
+                    <span className="font-mono text-xs font-semibold text-gold-soft">
                       {order.order_number}
-                    </td>
-                    <td className="px-5 py-3 text-white/85">{order.customer_name}</td>
-                    <td className="tabular px-5 py-3 text-right font-semibold text-white">
+                    </span>
+                    <StatusBadge status={order.status} />
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 flex-1 truncate text-sm text-white/85">
+                      {order.customer_name}
+                    </span>
+                    <span className="tabular shrink-0 text-sm font-semibold text-white">
                       {money(order.total)}
-                    </td>
-                    <td className="px-5 py-3">
-                      <StatusBadge status={order.status} />
-                    </td>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* DESKTOP: tabla */}
+            <div className="hidden md:block w-full overflow-x-auto">
+              <table className="w-full text-sm" style={{ minWidth: '620px' }}>
+                <thead>
+                  <tr className="border-b border-white/8">
+                    {['Nro.', 'Cliente', 'Total', 'Estado'].map((label, i) => (
+                      <th
+                        key={label}
+                        scope="col"
+                        className={`px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35 ${
+                          i === 2 ? 'text-right' : 'text-left'
+                        }`}
+                      >
+                        {label}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {data.recent.map((order, index) => (
+                    <tr
+                      key={order.id || index}
+                      className="anim-rise border-b border-white/5 transition-colors last:border-0 hover:bg-white/[0.035]"
+                      style={{ '--i': index }}
+                    >
+                      <td className="px-5 py-3 font-mono text-xs font-semibold text-gold-soft">
+                        {order.order_number}
+                      </td>
+                      <td className="px-5 py-3 text-white/85">{order.customer_name}</td>
+                      <td className="tabular px-5 py-3 text-right font-semibold text-white">
+                        {money(order.total)}
+                      </td>
+                      <td className="px-5 py-3">
+                        <StatusBadge status={order.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Panel>
     </div>
