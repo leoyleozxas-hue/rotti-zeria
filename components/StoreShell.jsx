@@ -1,6 +1,7 @@
 // components/StoreShell.jsx
 'use client'
 
+import { Suspense } from 'react'
 import { usePathname } from 'next/navigation'
 import { Toaster } from 'sonner'
 import Header from '@/components/Header'
@@ -16,7 +17,11 @@ export default function StoreShell({ children, footer }) {
 
   return (
     <>
-      <Header />
+      {/* Header envuelto en Suspense para que useSearchParams no rompa el build */}
+      <Suspense fallback={<div className="h-[4.25rem] bg-ink-950" />}>
+        <Header />
+      </Suspense>
+
       <main className="flex-1 pt-[6.75rem]">{children}</main>
       {footer}
       <CartDrawer />
