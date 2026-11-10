@@ -5,13 +5,6 @@ import { useState, useEffect } from 'react'
 import { Clock, MapPin, Wheat } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/config'
 
-const woodVertical = {
-  backgroundImage:
-    "linear-gradient(rgba(18,4,2,.55), rgba(18,4,2,.72)), url('/images/textura-madera-vertical.png')",
-  backgroundSize: 'cover',
-  backgroundPosition: 'center top',
-}
-
 const ITEMS = [
   { icon: Clock, text: SITE_CONFIG.hours.weekdays },
   { icon: MapPin, text: SITE_CONFIG.address },
@@ -29,7 +22,7 @@ export default function InfoBar() {
   }, [])
 
   return (
-    <section style={woodVertical} className="text-[#F5EDE3]">
+    <section className="bg-[#2B0F0B] text-[#F5EDE3]">
       {/* Mobile: rota */}
       <div className="md:hidden max-w-6xl mx-auto px-4 py-5">
         <div className="relative h-6">

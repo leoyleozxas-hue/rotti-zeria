@@ -12,6 +12,7 @@ import { useState, useEffect, useRef } from 'react'
 import { IconButton, IconLink } from '@/components/ui/button'
 import SiteLogo from '@/components/SiteLogo'
 import MarqueeBanner from '@/components/MarqueeBanner'
+import { useSearchParams } from 'next/navigation'
 
 const NAV_LINKS = [
   { href: '/', label: 'Inicio' },
@@ -19,6 +20,7 @@ const NAV_LINKS = [
   { href: '/lunch-eventos', label: 'Lunch & Eventos' },
   { href: '/contacto', label: 'Contacto' },
 ]
+
 
 // Páginas con hero oscuro → nav transparente al inicio
 const TRANSPARENT_ROUTES = ['/', '/productos', '/lunch-eventos', '/contacto']
@@ -30,6 +32,7 @@ export default function Header() {
   const openCart = useUIStore((s) => s.openCart)
   const mounted = useHydrated()
   const [menuOpen, setMenuOpen] = useState(false)
+  const searchParams = useSearchParams()
 
   const [hidden, setHidden] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -76,8 +79,15 @@ export default function Header() {
     }
   }, [])
 
-  const isTransparentRoute = TRANSPARENT_ROUTES.includes(pathname)
-  const navTransparent = isTransparentRoute && !scrolled && !menuOpen
+// En /productos con búsqueda activa, forzar header sólido
+// (no hay hero oscuro que justifique el transparente)
+const isSearchView =
+  pathname === '/productos' && Boolean(searchParams.get('q')?.trim())
+
+const isTransparentRoute =
+  TRANSPARENT_ROUTES.includes(pathname) && !isSearchView
+
+const navTransparent = isTransparentRoute && !scrolled && !menuOpen
 
   return (
     <header
@@ -180,4 +190,4 @@ export default function Header() {
       </div>
     </header>
   )
-}
+} 

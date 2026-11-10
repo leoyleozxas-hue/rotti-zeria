@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChevronDown, ImageIcon, Loader2, UploadCloud, X, Plus } from 'lucide-react'
+import { ChevronDown, ImageIcon, Loader2, UploadCloud, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { productSchema } from '@/lib/validations/product'
@@ -24,17 +24,9 @@ export default function ProductForm({ initialData = null }) {
   const router = useRouter()
   const isEditing = Boolean(initialData)
   const fileInputRef = useRef(null)
-  const galleryInputRef = useRef(null)
 
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(initialData?.image_url || null)
-
-  // Galería: URLs existentes + archivos nuevos pendientes de subir
-  const [existingGallery, setExistingGallery] = useState(
-    Array.isArray(initialData?.gallery) ? initialData.gallery : []
-  )
-  const [newGalleryFiles, setNewGalleryFiles] = useState([])
-
   const [loading, setLoading] = useState(false)
 
   const {
@@ -49,10 +41,11 @@ export default function ProductForm({ initialData = null }) {
       price: initialData?.price ?? '',
       category: initialData?.category || CATEGORIES[0],
       is_available: initialData?.is_available ?? true,
+      is_featured: initialData?.is_featured ?? false,
     },
   })
 
-  function handleMainImageChange(event) {
+  function handleImageChange(event) {
     const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
@@ -65,40 +58,6 @@ export default function ProductForm({ initialData = null }) {
     reader.readAsDataURL(file)
   }
 
-  function handleGalleryChange(event) {
-    const files = Array.from(event.target.files || [])
-    if (files.length === 0) return
-
-    const imageFiles = files.filter((file) => file.type.startsWith('image/'))
-    if (imageFiles.length === 0) {
-      toast.error('Los archivos tienen que ser imágenes')
-      return
-    }
-
-    const readers = imageFiles.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve({ file, preview: reader.result })
-          reader.readAsDataURL(file)
-        })
-    )
-
-    Promise.all(readers).then((results) => {
-      setNewGalleryFiles((prev) => [...prev, ...results])
-    })
-
-    event.target.value = '' // reset para poder subir el mismo archivo
-  }
-
-  function removeExistingGalleryImage(index) {
-    setExistingGallery((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  function removeNewGalleryImage(index) {
-    setNewGalleryFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
   async function onSubmit(data) {
     setLoading(true)
 
@@ -106,7 +65,6 @@ export default function ProductForm({ initialData = null }) {
       const supabase = createClient()
       let imageUrl = initialData?.image_url || null
 
-      // 1. Subir imagen principal si cambió
       if (imageFile) {
         const fileName = uniqueFileName(imageFile)
         const { error: uploadError } = await supabase.storage
@@ -120,28 +78,10 @@ export default function ProductForm({ initialData = null }) {
         imageUrl = urlData.publicUrl
       }
 
-      // 2. Subir imágenes nuevas de la galería
-      const uploadedGalleryUrls = []
-      for (const item of newGalleryFiles) {
-        const fileName = uniqueFileName(item.file)
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(fileName, item.file)
-        if (uploadError) throw uploadError
-
-        const { data: urlData } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(fileName)
-        uploadedGalleryUrls.push(urlData.publicUrl)
-      }
-
-      // 3. Galería final = existentes que se quedaron + nuevas subidas
-      const finalGallery = [...existingGallery, ...uploadedGalleryUrls]
-
       const payload = {
         ...data,
+        is_featured: data.is_featured ?? false,
         image_url: imageUrl,
-        gallery: finalGallery,
       }
 
       if (isEditing) {
@@ -176,17 +116,9 @@ export default function ProductForm({ initialData = null }) {
     }
   }
 
-  const totalGalleryImages = existingGallery.length + newGalleryFiles.length
-  const hasUnsavedChanges =
-    isDirty ||
-    Boolean(imageFile) ||
-    newGalleryFiles.length > 0 ||
-    existingGallery.length !==
-      (Array.isArray(initialData?.gallery) ? initialData.gallery.length : 0)
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
         <Panel tone="glass" padded={false}>
           <PanelHeader title="Información del producto" />
 
@@ -261,7 +193,7 @@ export default function ProductForm({ initialData = null }) {
               {({ errorId, hasError }) => (
                 <textarea
                   id="description"
-                  rows={6}
+                  rows={5}
                   {...register('description')}
                   aria-invalid={hasError}
                   aria-describedby={errorId}
@@ -270,30 +202,48 @@ export default function ProductForm({ initialData = null }) {
               )}
             </Field>
 
-            <label
-              htmlFor="is_available"
-              className="flex cursor-pointer items-center gap-3 rounded-field border border-white/10 bg-white/[0.03] px-3.5 py-3 transition hover:border-white/20"
-            >
-              <input
-                id="is_available"
-                type="checkbox"
-                {...register('is_available')}
-                className="h-4 w-4 cursor-pointer accent-gold-soft"
-              />
-              <span className="text-sm text-white/75">
-                Visible en la tienda
-                <span className="ml-1 text-xs text-white/35">
-                  (si lo desmarcás queda cargado pero oculto)
+            <div className="space-y-2 pt-2">
+              <label
+                htmlFor="is_available"
+                className="flex cursor-pointer items-center gap-3 rounded-field border border-white/10 bg-white/[0.03] px-3.5 py-3 transition hover:border-white/20"
+              >
+                <input
+                  id="is_available"
+                  type="checkbox"
+                  {...register('is_available')}
+                  className="h-4 w-4 cursor-pointer accent-gold-soft"
+                />
+                <span className="text-sm text-white/75">
+                  Visible en la tienda
+                  <span className="ml-1 text-xs text-white/35">
+                    (si lo desmarcás queda cargado pero oculto)
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+
+              <label
+                htmlFor="is_featured"
+                className="flex cursor-pointer items-center gap-3 rounded-field border border-gold/30 bg-gold/[0.08] px-3.5 py-3 transition hover:border-gold/50"
+              >
+                <input
+                  id="is_featured"
+                  type="checkbox"
+                  {...register('is_featured')}
+                  className="h-4 w-4 cursor-pointer accent-gold"
+                />
+                <span className="flex items-center gap-2 text-sm text-white/85">
+                  <Star size={14} className="text-gold-soft" fill="currentColor" />
+                  Marcar como "Más vendido"
+                  <span className="text-xs text-white/40">(aparece con badge dorado)</span>
+                </span>
+              </label>
+            </div>
           </div>
         </Panel>
 
         <div className="space-y-5">
-          {/* Imagen principal */}
           <Panel tone="glass" padded={false}>
-            <PanelHeader title="Imagen principal" />
+            <PanelHeader title="Imagen" />
 
             <div className="p-5">
               <button
@@ -312,7 +262,7 @@ export default function ProductForm({ initialData = null }) {
                 ) : (
                   <span className="flex flex-col items-center gap-2 text-white/35">
                     <ImageIcon size={26} aria-hidden />
-                    <span className="text-xs">Click para subir</span>
+                    <span className="text-xs">Click para subir una foto</span>
                   </span>
                 )}
               </button>
@@ -321,86 +271,11 @@ export default function ProductForm({ initialData = null }) {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleMainImageChange}
+                onChange={handleImageChange}
                 className="hidden"
               />
               <p className="mt-2 text-[10px] text-white/30">
-                Cuadrada se ve mejor. Máx. 5 MB.
-              </p>
-            </div>
-          </Panel>
-
-          {/* Galería adicional */}
-          <Panel tone="glass" padded={false}>
-            <PanelHeader
-              title={`Galería (${totalGalleryImages})`}
-              action={
-                <button
-                  type="button"
-                  onClick={() => galleryInputRef.current?.click()}
-                  className="flex items-center gap-1 text-xs font-medium text-gold-soft hover:text-white transition"
-                >
-                  <Plus size={12} /> Agregar
-                </button>
-              }
-            />
-
-            <div className="p-5 space-y-3">
-              {totalGalleryImages === 0 ? (
-                <p className="text-xs text-white/40 text-center py-4">
-                  Sin imágenes adicionales.
-                </p>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {existingGallery.map((url, idx) => (
-                    <div
-                      key={`existing-${idx}`}
-                      className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group"
-                    >
-                      <Image src={url} alt="" fill sizes="100px" className="object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeExistingGalleryImage(idx)}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg"
-                        aria-label="Eliminar"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-
-                  {newGalleryFiles.map((item, idx) => (
-                    <div
-                      key={`new-${idx}`}
-                      className="relative aspect-square rounded-lg overflow-hidden border-2 border-gold/40 group"
-                    >
-                      <Image src={item.preview} alt="" fill sizes="100px" className="object-cover" />
-                      <span className="absolute top-1 left-1 text-[8px] font-bold px-1.5 py-0.5 rounded bg-gold text-ink-950 uppercase">
-                        Nueva
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeNewGalleryImage(idx)}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg"
-                        aria-label="Eliminar"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleGalleryChange}
-                className="hidden"
-              />
-              <p className="text-[10px] text-white/30">
-                Podés subir varias a la vez.
+                Cuadrada se ve mejor en la grilla. Máx. 5 MB.
               </p>
             </div>
           </Panel>
@@ -430,10 +305,8 @@ export default function ProductForm({ initialData = null }) {
               Cancelar
             </Button>
 
-            {isEditing && hasUnsavedChanges && (
-              <p className="text-center text-[10px] text-gold-soft/70">
-                Tenés cambios sin guardar
-              </p>
+            {isEditing && isDirty && (
+              <p className="text-center text-[10px] text-gold-soft/70">Tenés cambios sin guardar</p>
             )}
           </div>
         </div>

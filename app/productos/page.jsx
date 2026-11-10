@@ -3,50 +3,186 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
+  ArrowLeft,
   ArrowRight,
   Briefcase,
   Cake,
-  ChevronRight,
   Croissant,
   Flame,
   LayoutGrid,
+  SearchX,
   Sandwich,
   Wheat,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import ProductCard from '@/components/ProductCard'
+import ProductSearch from '@/components/ProductSearch'
+import ProductsSidebar from '@/components/ProductsSidebar'
 import { SITE_CONFIG } from '@/lib/config'
 
 const PAGE_SIZE = 12
-
-const woodCatalog = {
-  backgroundImage:
-    "linear-gradient(rgba(18,4,2,.85), rgba(18,4,2,.90)), url('/images/textura-madera.png')",
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundAttachment: 'fixed',
-}
+const PREVIEW_COUNT = 3
 
 const CATEGORIES = [
-  { value: 'Todos', label: 'Todos', icon: LayoutGrid },
-  { value: 'Panes', label: 'Panes', icon: Wheat },
-  { value: 'Facturas', label: 'Facturas', icon: Croissant },
-  { value: 'Dulces', label: 'Dulces', icon: Cake },
-  { value: 'Salados', label: 'Salados', icon: Sandwich },
-  { value: 'Bocados calientes', label: 'Bocados', icon: Flame },
-  { value: 'Lunch', label: 'Lunch', icon: Briefcase },
+  { value: 'Todos', label: 'Todos', icon: LayoutGrid, note: 'Todo lo que horneamos, ordenado por categoría.' },
+  { value: 'Panes', label: 'Panes', icon: Wheat, note: 'De campo, integrales y masa madre.' },
+  { value: 'Facturas', label: 'Facturas', icon: Croissant, note: 'Medialunas, croissants y más.' },
+  { value: 'Dulces', label: 'Dulces', icon: Cake, note: 'Masas finas, secas y húmedas.' },
+  { value: 'Salados', label: 'Salados', icon: Sandwich, note: 'Sánguches de miga y tartas.' },
+  { value: 'Bocados calientes', label: 'Bocados', icon: Flame, note: 'Chipá, prepizzas y calentitos.' },
+  { value: 'Lunch', label: 'Lunch', icon: Briefcase, note: 'Bandejas y combos para reuniones.' },
 ]
 
-function buildUrl({ categoria, page }) {
+function buildUrl({ categoria, page, q }) {
   const params = new URLSearchParams()
   if (categoria && categoria !== 'Todos') params.set('categoria', categoria)
   if (page && page > 1) params.set('page', String(page))
+  if (q && q.trim()) params.set('q', q.trim())
   const qs = params.toString()
   return qs ? `/productos?${qs}` : '/productos'
 }
 
-async function ProductosGrid({ categoria, page }) {
+function groupByCategory(products) {
+  const map = new Map()
+  for (const p of products) {
+    if (!map.has(p.category)) map.set(p.category, [])
+    map.get(p.category).push(p)
+  }
+  return [...map.entries()]
+}
+
+const GRID =
+  'grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 sm:gap-y-14 lg:grid-cols-3'
+
+function GridSkeleton() {
+  return (
+    <div className={GRID} aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i}>
+          <div className="aspect-[4/5] animate-pulse bg-beige" />
+          <div className="mt-5 h-3 w-16 animate-pulse bg-beige" />
+          <div className="mt-3 h-5 w-3/4 animate-pulse bg-beige" />
+          <div className="mt-5 h-6 w-24 animate-pulse bg-beige" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Pagination({ categoria, q, page, totalPages, startNum, endNum, total }) {
+  const edge =
+    'inline-flex items-center gap-2 px-3 py-2 text-caption font-medium transition'
+  return (
+    <div className="mt-16 border-t border-sand/50 pt-8">
+      <p className="mb-5 text-center text-caption text-stone">
+        Mostrando {startNum}–{endNum} de {total} productos
+      </p>
+
+      {totalPages > 1 && (
+        <nav
+          aria-label="Paginación"
+          className="flex flex-wrap items-center justify-center gap-2"
+        >
+          {page > 1 ? (
+            <Link
+              href={buildUrl({ categoria, page: page - 1, q })}
+              className={`${edge} text-chocolate hover:text-ember`}
+            >
+              <ArrowLeft size={14} /> Anterior
+            </Link>
+          ) : (
+            <span className={`${edge} text-sand`}>
+              <ArrowLeft size={14} /> Anterior
+            </span>
+          )}
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+            const active = p === page
+            return (
+              <Link
+                key={p}
+                href={buildUrl({ categoria, page: p, q })}
+                aria-current={active ? 'page' : undefined}
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-caption font-semibold transition ${
+                  active ? 'bg-chocolate text-cream' : 'text-caramel hover:bg-beige'
+                }`}
+              >
+                {p}
+              </Link>
+            )
+          })}
+
+          {page < totalPages ? (
+            <Link
+              href={buildUrl({ categoria, page: page + 1, q })}
+              className={`${edge} text-chocolate hover:text-ember`}
+            >
+              Siguiente <ArrowRight size={14} />
+            </Link>
+          ) : (
+            <span className={`${edge} text-sand`}>
+              Siguiente <ArrowRight size={14} />
+            </span>
+          )}
+        </nav>
+      )}
+    </div>
+  )
+}
+
+function CategorySection({ cat, items, q }) {
+  const previewItems = items.slice(0, PREVIEW_COUNT)
+  const hasMore = items.length > PREVIEW_COUNT
+  const catData = CATEGORIES.find((c) => c.value === cat)
+  const Icon = catData?.icon
+
+  return (
+    <section aria-labelledby={`cat-${cat}`} className="scroll-mt-32">
+      <div className="mb-8 flex flex-wrap items-center gap-4">
+        {Icon && (
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-sand/60 bg-paper text-gold">
+            <Icon size={20} />
+          </span>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <h3 id={`cat-${cat}`} className="font-serif text-h2 text-chocolate">
+            {cat}
+          </h3>
+          {catData?.note && (
+            <p className="mt-1 text-caption text-caramel">{catData.note}</p>
+          )}
+        </div>
+
+        {hasMore && (
+          <Link
+            href={buildUrl({ categoria: cat, page: 1, q })}
+            className="group inline-flex shrink-0 items-center gap-2 border-b border-chocolate pb-1 text-caption font-medium text-chocolate transition hover:border-ember hover:text-ember"
+          >
+            Ver todos ({items.length})
+            <ArrowRight
+              size={14}
+              className="transition-transform group-hover:translate-x-1"
+            />
+          </Link>
+        )}
+      </div>
+
+      <div className={GRID}>
+        {previewItems.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+async function ProductosGrid({ categoria, page, q }) {
   const supabase = await createClient()
+
+  const hasSearch = Boolean(q && q.trim().length > 0)
+  const isAllView = categoria === 'Todos'
+  const showGrouped = isAllView && !hasSearch
 
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
@@ -57,110 +193,108 @@ async function ProductosGrid({ categoria, page }) {
     .eq('is_available', true)
     .order('category', { ascending: true })
     .order('name', { ascending: true })
-    .range(from, to)
 
-  if (categoria && categoria !== 'Todos') {
+  if (hasSearch) {
+    query = query.ilike('name', `%${q.trim()}%`)
+  }
+
+  if (!isAllView) {
     query = query.eq('category', categoria)
+  }
+
+  if (!showGrouped) {
+    query = query.range(from, to)
   }
 
   const { data: products, error, count } = await query
 
   if (error) {
+    console.error('Error cargando productos:', error.message)
     return (
-      <div className="text-red-300 bg-red-900/50 p-4 rounded-lg">
-        Error: {error.message}
+      <div className="border border-ember/25 bg-paper p-8 text-center">
+        <p className="font-serif text-h3 text-chocolate">No pudimos cargar los productos</p>
+        <p className="mt-2 text-caption text-caramel">
+          Recargá la página en unos segundos. Si sigue igual, escribinos.
+        </p>
       </div>
     )
   }
 
-  const total = count || 0
-  const totalPages = Math.ceil(total / PAGE_SIZE)
-
   if (!products || products.length === 0) {
+    if (hasSearch) {
+      return (
+        <div className="border border-sand/50 bg-paper px-6 py-20 text-center">
+          <SearchX size={32} className="mx-auto mb-4 text-stone" />
+          <p className="font-serif text-h3 text-chocolate">
+            No encontramos productos con "{q}"
+          </p>
+          <p className="mt-2 text-caption text-caramel">
+            Probá con otra palabra o revisá la ortografía.
+          </p>
+          <Link
+            href={buildUrl({ categoria, page: 1 })}
+            className="mt-6 inline-flex items-center gap-2 bg-chocolate px-5 py-3 text-caption font-medium text-cream transition hover:bg-ember"
+          >
+            Ver todo el catálogo
+          </Link>
+        </div>
+      )
+    }
+
     return (
-      <div className="text-center py-16 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 px-6">
-        <p className="text-white text-lg">No hay productos en esta categoría.</p>
+      <div className="border border-sand/50 bg-paper px-6 py-20 text-center">
+        <p className="font-serif text-h3 text-chocolate">
+          Todavía no hay productos en esta categoría
+        </p>
         <Link
           href="/productos"
-          className="text-[#E0C89A] hover:text-white mt-4 inline-block underline"
+          className="mt-6 inline-flex items-center gap-2 bg-chocolate px-5 py-3 text-caption font-medium text-cream transition hover:bg-ember"
         >
-          Ver todos
+          Ver todo el catálogo
         </Link>
       </div>
     )
   }
 
+  const total = count || products.length
+  const totalPages = Math.ceil(total / PAGE_SIZE)
   const startNum = from + 1
   const endNum = Math.min(from + products.length, total)
 
+  if (showGrouped) {
+    const grouped = groupByCategory(products)
+    return (
+      <div className="space-y-20">
+        {grouped.map(([cat, items]) => (
+          <CategorySection key={cat} cat={cat} items={items} q={q} />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-12 items-stretch">
-        {products.map((p, index) => (
-          <div
-            key={p.id}
-            className="anim-rise h-full"
-            style={{ animationDelay: index < 8 ? `${index * 60}ms` : '0ms' }}
-          >
-            <ProductCard product={p} />
-          </div>
+      {hasSearch && (
+        <p className="mb-8 text-caption text-caramel">
+          {total} {total === 1 ? 'resultado' : 'resultados'} para "{q}"
+        </p>
+      )}
+
+      <div className={GRID}>
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} />
         ))}
       </div>
 
-      <div className="border-t border-white/10 pt-8 pb-4 space-y-4">
-        <p className="text-center text-[#E0C89A] text-sm font-medium uppercase tracking-wider">
-          Mostrando {startNum}–{endNum} de {total}
-        </p>
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
-            {page > 1 ? (
-              <Link
-                href={buildUrl({ categoria, page: page - 1 })}
-                className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white transition text-xs sm:text-sm font-medium"
-              >
-                ← Anterior
-              </Link>
-            ) : (
-              <span className="px-3 sm:px-4 py-2 rounded-lg bg-white/5 text-white/25 border border-white/10 text-xs sm:text-sm">
-                ← Anterior
-              </span>
-            )}
-
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
-                const active = p === page
-                return (
-                  <Link
-                    key={p}
-                    href={buildUrl({ categoria, page: p })}
-                    className={`min-w-9 h-9 sm:min-w-10 sm:h-10 px-2 rounded-lg flex items-center justify-center text-xs sm:text-sm font-semibold transition ${
-                      active
-                        ? 'bg-[#E0C89A] text-[#2b0f0b] shadow-md'
-                        : 'bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white'
-                    }`}
-                  >
-                    {p}
-                  </Link>
-                )
-              })}
-            </div>
-
-            {page < totalPages ? (
-              <Link
-                href={buildUrl({ categoria, page: page + 1 })}
-                className="px-3 sm:px-4 py-2 rounded-lg bg-white/10 text-white/80 border border-white/20 hover:bg-white/20 hover:text-white transition text-xs sm:text-sm font-medium"
-              >
-                Siguiente →
-              </Link>
-            ) : (
-              <span className="px-3 sm:px-4 py-2 rounded-lg bg-white/5 text-white/25 border border-white/10 text-xs sm:text-sm">
-                Siguiente →
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      <Pagination
+        categoria={categoria}
+        q={q}
+        page={page}
+        totalPages={totalPages}
+        startNum={startNum}
+        endNum={endNum}
+        total={total}
+      />
     </>
   )
 }
@@ -169,45 +303,118 @@ export default async function ProductosPage({ searchParams }) {
   const params = await searchParams
   const categoria = params?.categoria || 'Todos'
   const page = Math.max(1, parseInt(params?.page || '1', 10) || 1)
+  const q = params?.q || ''
+  const hasSearch = Boolean(q && q.trim().length > 0)
 
+  const current = CATEGORIES.find((c) => c.value === categoria) || CATEGORIES[0]
+  const isAllView = categoria === 'Todos'
+
+  // ═══════════════════════════════════════════════════════════
+  // VISTA DE BÚSQUEDA → sin hero, resultados al toque
+  // ═══════════════════════════════════════════════════════════
+  if (hasSearch) {
+    return (
+      <div className="-mt-[6.75rem] min-h-screen bg-cream pt-[6.75rem]">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
+          <div className="mb-6">
+            <Link
+              href={buildUrl({ categoria })}
+              className="mb-4 inline-flex items-center gap-1.5 text-caption text-caramel transition hover:text-chocolate"
+            >
+              <ArrowLeft size={13} /> Volver al catálogo
+            </Link>
+            <h1 className="font-serif text-h1 text-chocolate">
+              Resultados de búsqueda
+            </h1>
+          </div>
+
+          <div className="flex flex-col lg:flex-row lg:gap-14">
+            {/* Sidebar unificado (con sticky + combos) */}
+            <ProductsSidebar categoria={categoria} q={q} />
+
+            {/* Columna productos */}
+            <div className="min-w-0 flex-1">
+              <div className="mb-8">
+                <ProductSearch categoria={categoria} />
+              </div>
+
+              {/* Pills categorías mobile */}
+              <div className="-mx-4 mb-8 px-4 lg:hidden">
+                <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
+                  {CATEGORIES.map((cat) => {
+                    const active = categoria === cat.value
+                    const Icon = cat.icon
+                    return (
+                      <Link
+                        key={cat.value}
+                        href={buildUrl({ categoria: cat.value, page: 1, q })}
+                        aria-current={active ? 'page' : undefined}
+                        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-caption transition ${
+                          active
+                            ? 'border-chocolate bg-chocolate font-semibold text-cream'
+                            : 'border-sand/60 bg-paper text-caramel hover:bg-beige'
+                        }`}
+                      >
+                        <Icon size={14} />
+                        {cat.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <Suspense
+                key={`${categoria}-${page}-${q}`}
+                fallback={<GridSkeleton />}
+              >
+                <ProductosGrid categoria={categoria} page={page} q={q} />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // VISTA NORMAL → hero sticky + cream sheet
+  // ═══════════════════════════════════════════════════════════
   return (
     <div className="relative">
-      {/* HERO STICKY */}
-      <section className="sticky top-0 z-0 h-[40vh] sm:h-[50vh] -mt-[6.75rem] pt-[6.75rem] overflow-hidden flex items-center justify-center">
+      <section className="sticky top-0 z-0 -mt-[6.75rem] flex h-[46vh] items-center justify-center overflow-hidden pt-[6.75rem] sm:h-[54vh]">
         <Image
           src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1600&q=85"
           alt={`Productos ${SITE_CONFIG.businessName}`}
           fill
           priority
-          className="object-cover object-center"
+          sizes="100vw"
+          className="animate-hero-zoom object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#150604]/90 via-[#3a130d]/70 to-[#C9A96E]/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-mahogany/80 via-chocolate/55 to-chocolate/85" />
 
-        <div className="relative z-10 w-full max-w-4xl mx-auto px-4 text-center anim-rise">
-          <span className="text-[#E0C89A] text-[10px] sm:text-xs uppercase tracking-[0.3em] font-bold mb-3 sm:mb-4 block">
-            Elaboración Artesanal
-          </span>
-          <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl text-white mb-3 sm:mb-4 drop-shadow-xl">
-            Nuestro Catálogo
+        <div className="animate-hero-rise relative z-10 mx-auto w-full max-w-3xl px-4 pb-10 text-center">
+          <h1 className="font-serif text-h1 text-cream drop-shadow-lg sm:text-display">
+            Nuestro catálogo
           </h1>
-          <p className="text-white/90 text-sm sm:text-base font-light max-w-lg mx-auto mb-4">
+          <p className="mx-auto mt-4 max-w-md text-body text-cream/85">
             Elegí tus favoritos y retiralos frescos por el local.
           </p>
-          <div className="w-16 sm:w-20 h-px bg-[#E0C89A] mx-auto"></div>
         </div>
       </section>
 
-      {/* CATÁLOGO */}
-      <section
-        style={woodCatalog}
-        className="relative z-10 py-8 sm:py-12 min-h-screen bg-parallax shadow-[0_-8px_30px_rgba(0,0,0,0.5)]"
-      >
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col lg:flex-row lg:gap-8">
+      <section className="relative z-10 -mt-8 min-h-screen rounded-t-[2rem] bg-cream pb-28 pt-12 shadow-[0_-24px_60px_-24px_rgb(18_4_2/0.6)] sm:-mt-12 sm:rounded-t-[3rem] sm:pt-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <header className="mb-10 flex flex-col gap-2 border-b border-sand/50 pb-8 sm:mb-14">
+            <h2 className="font-serif text-h1 text-chocolate">
+              {isAllView ? 'Todo el catálogo' : current.label}
+            </h2>
+            <p className="max-w-prose text-body text-caramel">{current.note}</p>
+          </header>
 
+          <div className="flex flex-col lg:flex-row lg:gap-14">
             {/* MOBILE: pills */}
-            <div className="lg:hidden mb-6 -mx-4 px-4">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="-mx-4 mb-8 px-4 lg:hidden">
+              <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
                 {CATEGORIES.map((cat) => {
                   const active = categoria === cat.value
                   const Icon = cat.icon
@@ -215,10 +422,11 @@ export default async function ProductosPage({ searchParams }) {
                     <Link
                       key={cat.value}
                       href={buildUrl({ categoria: cat.value, page: 1 })}
-                      className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm transition border ${
+                      aria-current={active ? 'page' : undefined}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-caption transition ${
                         active
-                          ? 'bg-[#2B0F0B] text-white border-[#2B0F0B] font-semibold'
-                          : 'bg-white/10 text-white/80 border-white/20 hover:bg-white/20'
+                          ? 'border-chocolate bg-chocolate font-semibold text-cream'
+                          : 'border-sand/60 bg-paper text-caramel hover:bg-beige'
                       }`}
                     >
                       <Icon size={14} />
@@ -229,85 +437,20 @@ export default async function ProductosPage({ searchParams }) {
               </div>
             </div>
 
-            {/* DESKTOP: categorías flotando sobre la madera */}
-            <aside className="hidden lg:block w-56 flex-shrink-0">
-              <div className="sticky top-24">
+            {/* Sidebar unificado */}
+            <ProductsSidebar categoria={categoria} q={q} />
 
-                <p className="text-[10px] uppercase tracking-[0.25em] text-[#E0C89A]/70 font-bold mb-4">
-                  Categorías
-                </p>
-
-                <ul className="space-y-0.5">
-                  {CATEGORIES.map((cat) => {
-                    const active = categoria === cat.value
-                    const Icon = cat.icon
-                    return (
-                      <li key={cat.value}>
-                        <Link
-                          href={buildUrl({ categoria: cat.value, page: 1 })}
-                          className={`group flex items-center justify-between px-3 py-2.5 text-sm transition-all border-l-2 ${
-                            active
-                              ? 'text-white font-semibold border-[#E0C89A] pl-4'
-                              : 'text-white/55 border-transparent hover:text-white hover:border-[#E0C89A]/50 hover:pl-4'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <Icon
-                              size={15}
-                              className={
-                                active
-                                  ? 'text-[#E0C89A]'
-                                  : 'text-white/40 group-hover:text-[#E0C89A]/70 transition'
-                              }
-                            />
-                            {cat.label}
-                          </span>
-                          <ChevronRight
-                            size={13}
-                            className={`transition-all ${
-                              active
-                                ? 'opacity-100 text-[#E0C89A]'
-                                : 'opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0'
-                            }`}
-                          />
-                        </Link>
-                      </li>
-                    )
-                  })}
-                </ul>
-
-                <Link
-                  href="/lunch-eventos"
-                  className="group block mt-8 pt-6 border-t border-white/10"
-                >
-                  <p className="text-[10px] uppercase tracking-[0.25em] text-[#E0C89A]/70 font-bold mb-2">
-                    ¿Algo especial?
-                  </p>
-                  <p className="font-serif text-white text-lg leading-tight mb-2 group-hover:text-[#E0C89A] transition">
-                    Combos para eventos
-                  </p>
-                  <p className="text-white/55 text-xs leading-relaxed mb-3">
-                    Bandejas a medida para reuniones y celebraciones.
-                  </p>
-                  <span className="inline-flex items-center gap-1 text-[#E0C89A] text-xs font-semibold border-b border-[#E0C89A]/40 pb-0.5 group-hover:border-[#E0C89A] transition">
-                    Ver combos
-                    <ArrowRight
-                      size={11}
-                      className="transition-transform group-hover:translate-x-0.5"
-                    />
-                  </span>
-                </Link>
-
+            {/* Columna productos */}
+            <div className="min-w-0 flex-1">
+              <div className="mb-10">
+                <ProductSearch categoria={categoria} />
               </div>
-            </aside>
 
-            <div className="flex-1 min-w-0">
               <Suspense
-                fallback={
-                  <p className="text-white/70 animate-pulse">Cargando productos...</p>
-                }
+                key={`${categoria}-${page}-${q}`}
+                fallback={<GridSkeleton />}
               >
-                <ProductosGrid categoria={categoria} page={page} />
+                <ProductosGrid categoria={categoria} page={page} q={q} />
               </Suspense>
             </div>
           </div>
