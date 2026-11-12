@@ -1,4 +1,5 @@
 // app/layout.jsx
+import { Suspense } from 'react'
 import { Fraunces, Inter } from 'next/font/google'
 import StoreShell from '@/components/StoreShell'
 import Footer from '@/components/Footer'
@@ -17,7 +18,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es" className={`${fraunces.variable} ${inter.variable}`}>
       <body className="font-sans bg-cream text-chocolate antialiased min-h-screen flex flex-col">
-        <StoreShell footer={<Footer />}>
+        <StoreShell
+          footer={
+            <Suspense fallback={<div className="h-64 bg-ink-950" />}>
+              <Footer />
+            </Suspense>
+          }
+        >
           {children}
         </StoreShell>
       </body>
