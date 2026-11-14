@@ -25,6 +25,7 @@ export default async function Image() {
       >
         <div
           style={{
+            display: 'flex',
             fontSize: 28,
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
@@ -36,6 +37,7 @@ export default async function Image() {
         </div>
         <div
           style={{
+            display: 'flex',
             fontSize: 96,
             fontWeight: 600,
             fontFamily: 'serif',
@@ -45,11 +47,12 @@ export default async function Image() {
         >
           {SITE_CONFIG.businessName}
         </div>
-        <div style={{ fontSize: 36, color: '#E0C89A', marginBottom: 40 }}>
+        <div style={{ display: 'flex', fontSize: 36, color: '#E0C89A', marginBottom: 40 }}>
           {SITE_CONFIG.businessTagline}
         </div>
         <div
           style={{
+            display: 'flex',
             fontSize: 24,
             color: 'rgba(245,237,227,0.7)',
             maxWidth: 800,
