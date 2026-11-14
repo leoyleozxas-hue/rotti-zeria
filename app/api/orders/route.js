@@ -2,81 +2,75 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getSettings } from '@/lib/settings'
+import { orderSchema } from '@/lib/validations/order'
+import { z } from 'zod'
+
+const itemSchema = z.object({
+  product_id: z.string().uuid('Producto inválido'),
+  quantity: z.coerce.number().int().min(1, 'Cantidad inválida').max(99, 'Cantidad máxima por ítem: 99'),
+})
+
+const requestSchema = z.object({
+  customer: orderSchema,
+  items: z.array(itemSchema).min(1, 'El pedido no tiene productos'),
+})
 
 export async function POST(request) {
+  let body
   try {
-    const { customer, items } = await request.json()
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ success: false, error: 'JSON inválido' }, { status: 400 })
+  }
+
+  const parsed = requestSchema.safeParse(body)
+  if (!parsed.success) {
+    const first = parsed.error.issues?.[0]
+    return NextResponse.json(
+      { success: false, error: first?.message || 'Datos inválidos', field: first?.path?.join('.') },
+      { status: 400 }
+    )
+  }
+
+  const { customer, items } = parsed.data
+
+  // Agrupar duplicados (mismo producto con distintas cantidades)
+  const grouped = new Map()
+  for (const it of items) {
+    grouped.set(it.product_id, (grouped.get(it.product_id) || 0) + it.quantity)
+  }
+  const normalized = [...grouped.entries()].map(([product_id, quantity]) => ({
+    product_id,
+    quantity,
+  }))
+
+  try {
     const supabase = await createClient()
+    const { data, error } = await supabase.rpc('create_order', {
+      p_customer: customer,
+      p_items: normalized,
+    })
 
-    const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0)
-    const orderNumber = `BZ-${Date.now().toString().slice(-6)}`
-
-    let fullAddress = null
-    if (customer.delivery_type === 'delivery') {
-      const parts = [
-        `${customer.street} ${customer.street_number}`,
-        customer.floor && `Piso ${customer.floor}`,
-        customer.apartment && `Depto ${customer.apartment}`,
-        customer.neighborhood,
-        customer.city,
-        customer.postal_code && `CP ${customer.postal_code}`,
-      ].filter(Boolean)
-      fullAddress = parts.join(', ')
+    if (error) {
+      console.error('create_order error:', error)
+      return NextResponse.json(
+        { success: false, error: error.message || 'No se pudo crear el pedido' },
+        { status: 500 }
+      )
     }
 
-    const fullName = `${customer.first_name} ${customer.last_name}`.trim()
-
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        order_number: orderNumber,
-        customer_name: fullName,
-        customer_phone: customer.customer_phone,
-        customer_email: customer.customer_email || null,
-        delivery_type: customer.delivery_type,
-        address: fullAddress,
-        pickup_date: customer.pickup_date || null,
-        pickup_time: customer.pickup_time || null,
-        payment_reference: customer.payment_reference || null,
-        birthdate: customer.birthdate || null,
-        total,
-        status: 'pending_payment',
-        payment_method: 'transfer',
-      })
-      .select()
-      .single()
-
-    if (orderError) throw orderError
-
-    const orderItems = items.map((i) => ({
-      order_id: order.id,
-      product_id: i.product_id,
-      product_name: i.name,
-      product_image: i.image_url || null,
-      quantity: i.quantity,
-      unit_price: i.price,
-      subtotal: i.price * i.quantity,
-    }))
-
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems)
-
-    if (itemsError) throw itemsError
-
-    // 👇 Traemos los settings para devolver datos bancarios + WhatsApp
     const settings = await getSettings()
 
     return NextResponse.json({
       success: true,
-      order,
+      order: data,
       bank: settings.bank,
       whatsapp: settings.whatsapp,
     })
   } catch (error) {
     console.error('Error creando pedido:', error)
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message || 'Error inesperado' },
       { status: 500 }
     )
   }

@@ -18,6 +18,7 @@ const getProduct = cache(async (id) => {
     .from('products')
     .select('*')
     .eq('id', id)
+    .eq('is_available', true) 
     .single()
 
   if (error || !data) return null
