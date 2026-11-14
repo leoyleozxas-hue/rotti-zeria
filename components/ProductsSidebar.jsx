@@ -1,16 +1,6 @@
 // components/ProductsSidebar.jsx
 import Link from 'next/link'
-import { ArrowRight, ChevronRight, Briefcase, Cake, Croissant, Flame, LayoutGrid, Sandwich, Wheat } from 'lucide-react'
-
-const CATEGORIES = [
-  { value: 'Todos', label: 'Todos', icon: LayoutGrid },
-  { value: 'Panes', label: 'Panes', icon: Wheat },
-  { value: 'Facturas', label: 'Facturas', icon: Croissant },
-  { value: 'Dulces', label: 'Dulces', icon: Cake },
-  { value: 'Salados', label: 'Salados', icon: Sandwich },
-  { value: 'Bocados calientes', label: 'Bocados', icon: Flame },
-  { value: 'Lunch', label: 'Lunch', icon: Briefcase },
-]
+import { ArrowRight, ChevronRight } from 'lucide-react'
 
 function buildUrl({ categoria, q, page = 1 }) {
   const params = new URLSearchParams()
@@ -21,13 +11,13 @@ function buildUrl({ categoria, q, page = 1 }) {
   return qs ? `/productos?${qs}` : '/productos'
 }
 
-export default function ProductsSidebar({ categoria = 'Todos', q = '' }) {
+export default function ProductsSidebar({ categoria = 'Todos', q = '', categories = [] }) {
   return (
     <aside className="hidden w-56 shrink-0 lg:block">
       <div className="sticky top-32">
         <nav aria-label="Categorías">
           <ul className="space-y-1">
-            {CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const active = categoria === cat.value
               const Icon = cat.icon
               return (

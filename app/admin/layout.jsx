@@ -17,11 +17,11 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Toaster } from 'sonner'
-import { ADMIN_NAV, titleForPath } from '@/lib/constants/nav'
+import { buildAdminNav, titleForPath } from '@/lib/constants/nav'
 import { useNotificationStore } from '@/lib/store/notificationStore'
 import SiteLogo from '@/components/SiteLogo'
 
-const SIDEBAR_WIDTH = 288 // px (equivale a w-72)
+const SIDEBAR_WIDTH = 288
 
 const woodSidebar = {
   backgroundImage:
@@ -70,6 +70,7 @@ function AdminLayoutContent({ children }) {
   const [collapsed, setCollapsed] = useState(false)
   const [today, setToday] = useState('')
   const [openMenus, setOpenMenus] = useState({})
+  const [categories, setCategories] = useState([])
 
   const { pendingOrders, newConsultas, setCounts } = useNotificationStore()
 
@@ -134,13 +135,32 @@ function AdminLayoutContent({ children }) {
     }
   }, [pathname, setCounts])
 
+  // Categorías para el submenú de Productos
+  useEffect(() => {
+    if (pathname === '/admin/login') return
+    const supabase = createClient()
+
+    async function loadCategories() {
+      const { data } = await supabase
+        .from('categories')
+        .select('name, sort_order')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+      setCategories(data || [])
+    }
+
+    loadCategories()
+  }, [pathname])
+
+  const adminNav = buildAdminNav(categories)
+
   const activeGroup = pathname.startsWith('/admin/pedidos')
     ? 'Pedidos'
     : pathname.startsWith('/admin/productos')
       ? 'Productos'
       : null
 
-  // Auto-abrir el grupo activo al navegar (acordeón estricto)
+  // Auto-abrir el grupo activo al navegar
   useEffect(() => {
     if (activeGroup) {
       setOpenMenus({ [activeGroup]: true })
@@ -171,9 +191,8 @@ function AdminLayoutContent({ children }) {
       if (isCurrentlyOpen) {
         return { ...prev, [label]: false }
       }
-      // Abrir este, cerrar todos los demás
       const next = {}
-      ADMIN_NAV.forEach((section) => {
+      adminNav.forEach((section) => {
         section.items.forEach((i) => {
           if (i.children?.length) next[i.label] = false
         })
@@ -195,7 +214,6 @@ function AdminLayoutContent({ children }) {
 
   return (
     <div className="admin-scope flex min-h-screen text-cream" style={woodMain}>
-      {/* Overlay mobile */}
       {sidebarOpen && (
         <button
           type="button"
@@ -205,7 +223,6 @@ function AdminLayoutContent({ children }) {
         />
       )}
 
-      {/* ──────────────── SIDEBAR ──────────────── */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-white/10 shadow-2xl transition-transform duration-[400ms] ${EASE} ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -228,7 +245,7 @@ function AdminLayoutContent({ children }) {
         </div>
 
         <nav className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-3 py-4">
-          {ADMIN_NAV.map((section) => (
+          {adminNav.map((section) => (
             <div key={section.group}>
               <p className="mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-gold-soft/50">
                 {section.group}
@@ -393,7 +410,6 @@ function AdminLayoutContent({ children }) {
         </div>
       </aside>
 
-      {/* ──────── TAB LATERAL (solo desktop) ──────── */}
       <button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
@@ -409,7 +425,6 @@ function AdminLayoutContent({ children }) {
         )}
       </button>
 
-      {/* ──────── CONTENIDO PRINCIPAL ──────── */}
       <div
         className={`flex min-h-screen w-full min-w-0 flex-col overflow-hidden transition-[margin-left] duration-[400ms] ${EASE} ${
           collapsed ? 'md:ml-0' : 'md:ml-72'
@@ -421,7 +436,6 @@ function AdminLayoutContent({ children }) {
         >
           <div className="flex h-14 items-center justify-between gap-4 px-4 md:px-8">
             <div className="flex min-w-0 items-center gap-3">
-              {/* Hamburguesa animada (mobile) */}
               <button
                 type="button"
                 onClick={() => setSidebarOpen((v) => !v)}

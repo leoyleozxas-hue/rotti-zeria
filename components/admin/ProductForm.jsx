@@ -1,4 +1,4 @@
-// components/admin/ProductForm.jsx
+// components/admin/ProductForm.jsx — versión parcheada
 'use client'
 
 import { useRef, useState } from 'react'
@@ -10,7 +10,6 @@ import { ChevronDown, ImageIcon, Loader2, UploadCloud, Star } from 'lucide-react
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { productSchema } from '@/lib/validations/product'
-import { CATEGORIES } from '@/lib/constants/catalog'
 import Panel, { PanelHeader } from '@/components/ui/panel'
 import Field, { fieldClass } from '@/components/ui/field'
 import { Button } from '@/components/ui/button'
@@ -20,10 +19,18 @@ function uniqueFileName(file) {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
 }
 
-export default function ProductForm({ initialData = null }) {
+export default function ProductForm({ initialData = null, categories = [] }) {
   const router = useRouter()
   const isEditing = Boolean(initialData)
   const fileInputRef = useRef(null)
+  console.log('[ProductForm] categories prop:', categories)
+
+  // Si el producto tiene una categoría que ya no existe en la DB,
+  // la agregamos al final del select para no romper la edición.
+  const allCategories = [...categories]
+  if (initialData?.category && !allCategories.includes(initialData.category)) {
+    allCategories.push(initialData.category)
+  }
 
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(initialData?.image_url || null)
@@ -39,7 +46,7 @@ export default function ProductForm({ initialData = null }) {
       name: initialData?.name || '',
       description: initialData?.description || '',
       price: initialData?.price ?? '',
-      category: initialData?.category || CATEGORIES[0],
+      category: initialData?.category || allCategories[0] || '',
       is_available: initialData?.is_available ?? true,
       is_featured: initialData?.is_featured ?? false,
     },
@@ -167,7 +174,7 @@ export default function ProductForm({ initialData = null }) {
                       aria-describedby={errorId}
                       className={`cursor-pointer appearance-none pr-9 ${fieldClass(hasError)}`}
                     >
-                      {CATEGORIES.map((category) => (
+                      {allCategories.map((category) => (
                         <option key={category} value={category} className="bg-ink-900 text-cream">
                           {category}
                         </option>
@@ -233,7 +240,7 @@ export default function ProductForm({ initialData = null }) {
                 />
                 <span className="flex items-center gap-2 text-sm text-white/85">
                   <Star size={14} className="text-gold-soft" fill="currentColor" />
-                  Marcar como "Más vendido"
+                  Destacar en home
                   <span className="text-xs text-white/40">(aparece con badge dorado)</span>
                 </span>
               </label>

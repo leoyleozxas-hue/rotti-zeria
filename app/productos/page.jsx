@@ -20,26 +20,45 @@ import ProductSearch from '@/components/ProductSearch'
 import ProductsSidebar from '@/components/ProductsSidebar'
 import { SITE_CONFIG } from '@/lib/config'
 import { buildMetadata } from '@/lib/metadata'
+import { getActiveCategories } from '@/lib/categories'
 
 const PAGE_SIZE = 12
 const PREVIEW_COUNT = 3
 
-const CATEGORIES = [
-  { value: 'Todos', label: 'Todos', icon: LayoutGrid, note: 'Todo lo que horneamos, ordenado por categoría.' },
-  { value: 'Panes', label: 'Panes', icon: Wheat, note: 'De campo, integrales y masa madre.' },
-  { value: 'Facturas', label: 'Facturas', icon: Croissant, note: 'Medialunas, croissants y más.' },
-  { value: 'Dulces', label: 'Dulces', icon: Cake, note: 'Masas finas, secas y húmedas.' },
-  { value: 'Salados', label: 'Salados', icon: Sandwich, note: 'Sánguches de miga y tartas.' },
-  { value: 'Bocados calientes', label: 'Bocados', icon: Flame, note: 'Chipá, prepizzas y calentitos.' },
-  { value: 'Lunch', label: 'Lunch', icon: Briefcase, note: 'Bandejas y combos para reuniones.' },
-]
+// Mapeo de íconos por slug. Si una categoría nueva no está acá,
+// cae al ícono genérico LayoutGrid.
+const ICONS_BY_SLUG = {
+  panes: Wheat,
+  facturas: Croissant,
+  dulces: Cake,
+  salados: Sandwich,
+  'bocados-calientes': Flame,
+  lunch: Briefcase,
+}
+
+const GENERIC_ICON = LayoutGrid
+
+function buildCategoriesFromDB(dbCategories) {
+  const todos = {
+    value: 'Todos',
+    label: 'Todos',
+    icon: LayoutGrid,
+    note: 'Todo lo que horneamos, ordenado por categoría.',
+  }
+  const dynamic = dbCategories.map((c) => ({
+    value: c.name,
+    label: c.name,
+    icon: ICONS_BY_SLUG[c.slug] || GENERIC_ICON,
+    note: c.description || '',
+  }))
+  return [todos, ...dynamic]
+}
 
 export async function generateMetadata({ searchParams }) {
   const params = await searchParams
   const categoria = params?.categoria
   const q = params?.q
 
-  // Si hay búsqueda → no indexar (contenido efímero)
   if (q) {
     return buildMetadata({
       title: 'Resultados de búsqueda',
@@ -53,7 +72,7 @@ export async function generateMetadata({ searchParams }) {
     title: categoria ? `${categoria}` : 'Catálogo',
     description: categoria
       ? `Todos nuestros productos de ${categoria}.`
-      : 'Explorá el catálogo completo: panes, facturas, dulces, salados y bocados calientes.',
+      : 'Explorá el catálogo completo de productos artesanales.',
     path: categoria ? `/productos?categoria=${encodeURIComponent(categoria)}` : '/productos',
   })
 }
@@ -155,10 +174,10 @@ function Pagination({ categoria, q, page, totalPages, startNum, endNum, total })
   )
 }
 
-function CategorySection({ cat, items, q }) {
+function CategorySection({ cat, items, q, categories }) {
   const previewItems = items.slice(0, PREVIEW_COUNT)
   const hasMore = items.length > PREVIEW_COUNT
-  const catData = CATEGORIES.find((c) => c.value === cat)
+  const catData = categories.find((c) => c.value === cat)
   const Icon = catData?.icon
 
   return (
@@ -202,7 +221,7 @@ function CategorySection({ cat, items, q }) {
   )
 }
 
-async function ProductosGrid({ categoria, page, q }) {
+async function ProductosGrid({ categoria, page, q, categories }) {
   const supabase = await createClient()
 
   const hasSearch = Boolean(q && q.trim().length > 0)
@@ -291,7 +310,13 @@ async function ProductosGrid({ categoria, page, q }) {
     return (
       <div className="space-y-20">
         {grouped.map(([cat, items]) => (
-          <CategorySection key={cat} cat={cat} items={items} q={q} />
+          <CategorySection
+            key={cat}
+            cat={cat}
+            items={items}
+            q={q}
+            categories={categories}
+          />
         ))}
       </div>
     )
@@ -326,12 +351,15 @@ async function ProductosGrid({ categoria, page, q }) {
 
 export default async function ProductosPage({ searchParams }) {
   const params = await searchParams
+  const dbCategories = await getActiveCategories()
+  const categories = buildCategoriesFromDB(dbCategories)
+
   const categoria = params?.categoria || 'Todos'
   const page = Math.max(1, parseInt(params?.page || '1', 10) || 1)
   const q = params?.q || ''
   const hasSearch = Boolean(q && q.trim().length > 0)
 
-  const current = CATEGORIES.find((c) => c.value === categoria) || CATEGORIES[0]
+  const current = categories.find((c) => c.value === categoria) || categories[0]
   const isAllView = categoria === 'Todos'
 
   // ═══════════════════════════════════════════════════════════
@@ -354,19 +382,16 @@ export default async function ProductosPage({ searchParams }) {
           </div>
 
           <div className="flex flex-col lg:flex-row lg:gap-14">
-            {/* Sidebar unificado (con sticky + combos) */}
-            <ProductsSidebar categoria={categoria} q={q} />
+            <ProductsSidebar categoria={categoria} q={q} categories={categories} />
 
-            {/* Columna productos */}
             <div className="min-w-0 flex-1">
               <div className="mb-8">
                 <ProductSearch categoria={categoria} />
               </div>
 
-              {/* Pills categorías mobile */}
               <div className="-mx-4 mb-8 px-4 lg:hidden">
                 <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
-                  {CATEGORIES.map((cat) => {
+                  {categories.map((cat) => {
                     const active = categoria === cat.value
                     const Icon = cat.icon
                     return (
@@ -392,7 +417,12 @@ export default async function ProductosPage({ searchParams }) {
                 key={`${categoria}-${page}-${q}`}
                 fallback={<GridSkeleton />}
               >
-                <ProductosGrid categoria={categoria} page={page} q={q} />
+                <ProductosGrid
+                  categoria={categoria}
+                  page={page}
+                  q={q}
+                  categories={categories}
+                />
               </Suspense>
             </div>
           </div>
@@ -437,10 +467,9 @@ export default async function ProductosPage({ searchParams }) {
           </header>
 
           <div className="flex flex-col lg:flex-row lg:gap-14">
-            {/* MOBILE: pills */}
             <div className="-mx-4 mb-8 px-4 lg:hidden">
               <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
-                {CATEGORIES.map((cat) => {
+                {categories.map((cat) => {
                   const active = categoria === cat.value
                   const Icon = cat.icon
                   return (
@@ -462,10 +491,8 @@ export default async function ProductosPage({ searchParams }) {
               </div>
             </div>
 
-            {/* Sidebar unificado */}
-            <ProductsSidebar categoria={categoria} q={q} />
+            <ProductsSidebar categoria={categoria} q={q} categories={categories} />
 
-            {/* Columna productos */}
             <div className="min-w-0 flex-1">
               <div className="mb-10">
                 <ProductSearch categoria={categoria} />
@@ -475,7 +502,12 @@ export default async function ProductosPage({ searchParams }) {
                 key={`${categoria}-${page}-${q}`}
                 fallback={<GridSkeleton />}
               >
-                <ProductosGrid categoria={categoria} page={page} q={q} />
+                <ProductosGrid
+                  categoria={categoria}
+                  page={page}
+                  q={q}
+                  categories={categories}
+                />
               </Suspense>
             </div>
           </div>

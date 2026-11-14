@@ -64,7 +64,6 @@ export default function ProductCard({ product }) {
       ? 'fill-red-500 text-red-500'
       : 'text-gray-400 group-hover:text-red-400'
 
-  // Solo la primera línea (antes del \n) → corta las listas de combos
   const shortDescription = (product.description || '').split('\n')[0].trim()
 
   return (
@@ -75,13 +74,12 @@ export default function ProductCard({ product }) {
       onMouseLeave={handleMouseLeave}
       className="tilt-card group relative flex flex-col h-full bg-[#FCFAF8] overflow-hidden shadow-sm hover:shadow-2xl transition-shadow duration-300 border border-[#EADFC8] hover:border-[#C9A96E]"
     >
-      {product.category === 'Facturas' && (
+      {product.is_featured && (
         <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-[#C9A96E] text-[#2b0f0b] text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 sm:px-3 py-0.5 sm:py-1 shadow-md">
-          Más vendido
+          Destacado
         </div>
       )}
 
-      {/* Corazón circular */}
       <button
         onClick={handleFavorite}
         className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:scale-110 transition"
@@ -90,7 +88,6 @@ export default function ProductCard({ product }) {
         <Heart size={16} className={`transition ${heartClass}`} />
       </button>
 
-      {/* Imagen: altura fija para que todas midan igual */}
       <div className="relative aspect-square overflow-hidden bg-gray-100 shrink-0">
         {product.image_url ? (
           <Image
@@ -107,23 +104,19 @@ export default function ProductCard({ product }) {
         )}
       </div>
 
-      {/* Contenido: flex-1 para empujar el footer abajo */}
       <div className="p-3 sm:p-5 flex flex-col flex-1 min-h-0">
         <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#9a8b7a] mb-1 font-semibold shrink-0">
           {product.category}
         </span>
 
-        {/* Título: 2 líneas fijas */}
         <h3 className="font-serif text-sm sm:text-lg text-[#2B0F0B] mb-1 sm:mb-2 leading-tight group-hover:text-[#5a1a10] transition font-semibold line-clamp-2 shrink-0">
           {product.name}
         </h3>
 
-        {/* Descripción: 2 líneas máximo (o vacío si es mobile) */}
         <p className="hidden sm:block text-sm text-gray-500 mb-4 line-clamp-2">
           {shortDescription}
         </p>
 
-        {/* Footer: mt-auto lo pinea al fondo */}
         <div className="mt-auto pt-3 sm:pt-4 border-t border-gray-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="font-serif text-base sm:text-xl text-[#2B0F0B] font-bold">
             ${Number(product.price).toLocaleString('es-AR')}

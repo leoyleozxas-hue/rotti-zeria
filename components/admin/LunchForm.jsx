@@ -27,7 +27,7 @@ function uniqueFileName(file) {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`
 }
 
-export default function LunchForm({ initialData = null }) {
+export default function LunchForm({ initialData = null, defaultTipo = 'Lunch' }) {
   const router = useRouter()
   const isEditing = Boolean(initialData)
   const fileInputRef = useRef(null)
@@ -47,12 +47,15 @@ export default function LunchForm({ initialData = null }) {
       name: initialData?.name || '',
       description: initialData?.description || '',
       price: initialData?.price ?? '',
-      lunch_type: initialData?.lunch_type || 'Lunch',
+      lunch_type: initialData?.lunch_type || defaultTipo,
       is_available: initialData?.is_available ?? true,
     },
   })
 
   const currentType = watch('lunch_type')
+  const isEvento = currentType === 'Evento'
+  const noun = isEvento ? 'evento' : 'lunch'
+  const Noun = isEvento ? 'Evento' : 'Lunch'
 
   function handleImageChange(event) {
     const file = event.target.files?.[0]
@@ -97,11 +100,11 @@ export default function LunchForm({ initialData = null }) {
           .update(payload)
           .eq('id', initialData.id)
         if (error) throw error
-        toast.success('Combo actualizado')
+        toast.success(`${Noun} actualizado`)
       } else {
         const { error } = await supabase.from('products').insert([payload])
         if (error) throw error
-        toast.success('Combo creado')
+        toast.success(`${Noun} creado`)
       }
 
       router.push('/admin/lunch?tipo=' + data.lunch_type)
@@ -118,9 +121,9 @@ export default function LunchForm({ initialData = null }) {
       <div className="grid gap-5 lg:grid-cols-[1fr_350px]">
         <div className="space-y-5">
           <Panel tone="glass" padded={false}>
-            <PanelHeader title="Información del Combo" />
+            <PanelHeader title={`Información del ${noun}`} />
             <div className="space-y-4 p-5">
-              <Field label="Nombre del combo" required error={errors.name?.message}>
+              <Field label="Nombre" required error={errors.name?.message}>
                 {({ hasError }) => (
                   <input {...register('name')} className={fieldClass(hasError)} />
                 )}
@@ -140,41 +143,40 @@ export default function LunchForm({ initialData = null }) {
                 <Field label="Tipo" required error={errors.lunch_type?.message}>
                   {({ hasError }) => (
                     <select {...register('lunch_type')} className={fieldClass(hasError)}>
-                      <option value="Lunch">Lunch (Oficinas/Reuniones)</option>
-                      <option value="Evento">Evento (Catering)</option>
+                      <option value="Lunch">Lunch para oficinas</option>
+                      <option value="Evento">Eventos / Catering</option>
                     </select>
                   )}
                 </Field>
               </div>
 
-              {/* Aviso contextual según tipo */}
               <div
                 className={`rounded-lg border p-3 text-xs ${
-                  currentType === 'Evento'
-                    ? 'bg-[#C9A96E]/10 border-[#C9A96E]/30 text-[#E0C89A]'
+                  isEvento
+                    ? 'bg-gold/10 border-gold/30 text-gold-soft'
                     : 'bg-white/5 border-white/10 text-white/60'
                 }`}
               >
-                {currentType === 'Evento' ? (
+                {isEvento ? (
                   <>
-                    <strong className="text-[#E0C89A]">Catering / Evento:</strong>{' '}
-                    este combo aparece en la sección "Servicios de Catering" de la página pública. Ideal para
-                    servicios con mozos, bandejas grandes, bodas, empresas, etc.
+                    <strong className="text-gold-soft">Evento / Catering:</strong>{' '}
+                    aparece en la sección &quot;Servicios de Catering&quot; de la página pública.
+                    Ideal para servicios con mozos, bandejas grandes, bodas, empresas, etc.
                   </>
                 ) : (
                   <>
                     <strong className="text-white">Lunch para oficinas:</strong>{' '}
-                    aparece en "Lunch para Oficinas". Ideal para viandas individuales o bandejas para grupos
-                    chicos.
+                    aparece en &quot;Lunch para Oficinas&quot;. Ideal para viandas individuales
+                    o bandejas para grupos chicos.
                   </>
                 )}
               </div>
 
               <Field
-                label="Descripción e Incluye"
+                label="Descripción e incluye"
                 required
                 error={errors.description?.message}
-                hint="Detallá qué trae el combo. Usá saltos de línea para listar los ítems uno debajo del otro."
+                hint="Detallá qué trae. Usá saltos de línea para listar los ítems uno debajo del otro."
               >
                 {({ hasError }) => (
                   <textarea
@@ -192,9 +194,7 @@ export default function LunchForm({ initialData = null }) {
                   {...register('is_available')}
                   className="h-4 w-4 cursor-pointer accent-gold-soft"
                 />
-                <span className="text-sm text-white/75">
-                  Visible en la web pública
-                </span>
+                <span className="text-sm text-white/75">Visible en la web pública</span>
               </label>
             </div>
           </Panel>
@@ -202,7 +202,7 @@ export default function LunchForm({ initialData = null }) {
 
         <div className="space-y-5">
           <Panel tone="glass" padded={false}>
-            <PanelHeader title="Imagen del combo" />
+            <PanelHeader title={`Imagen del ${noun}`} />
             <div className="p-5">
               <button
                 type="button"
@@ -241,7 +241,7 @@ export default function LunchForm({ initialData = null }) {
             ) : isEditing ? (
               'Guardar cambios'
             ) : (
-              'Guardar Combo'
+              `Guardar ${noun}`
             )}
           </Button>
         </div>

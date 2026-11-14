@@ -22,6 +22,8 @@ async function FeaturedProducts() {
     .from('products')
     .select('*')
     .eq('is_available', true)
+    .order('is_featured', { ascending: false })  // ← destacados primero
+    .order('created_at', { ascending: false })   // ← luego por más recientes
     .limit(4)
 
   if (!products?.length) return null

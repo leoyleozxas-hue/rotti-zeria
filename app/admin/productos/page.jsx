@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import ProductsTable from '@/components/admin/ProductsTable'
 import PageHeader from '@/components/ui/page-header'
 import { ButtonLink } from '@/components/ui/button'
-import { CATEGORY_FILTERS, isCategory } from '@/lib/constants/catalog'
+import { getAllCategories } from '@/lib/categories'
 
 async function getProducts(categoria) {
   const supabase = await createClient()
@@ -18,7 +18,13 @@ async function getProducts(categoria) {
 
 export default async function AdminProductosPage({ searchParams }) {
   const params = await searchParams
-  const categoria = isCategory(params?.categoria) ? params.categoria : null
+  const allCategories = await getAllCategories()
+
+  const categoriaParam = params?.categoria
+  const categoria = allCategories.some((c) => c.name === categoriaParam)
+    ? categoriaParam
+    : null
+
   const products = await getProducts(categoria)
 
   const chipBase =
@@ -38,15 +44,24 @@ export default async function AdminProductosPage({ searchParams }) {
         }
       />
 
-      {/* Filtro por categoría: misma fuente de datos que el sidebar */}
       <nav aria-label="Filtrar por categoría" className="flex flex-wrap gap-2">
-        {CATEGORY_FILTERS.map(({ value, label }) => {
-          const active = categoria === value
-          const href = value ? `/admin/productos?categoria=${encodeURIComponent(value)}` : '/admin/productos'
+        <Link
+          href="/admin/productos"
+          aria-current={!categoria ? 'page' : undefined}
+          className={`${chipBase} ${
+            !categoria
+              ? 'border-gold/45 bg-gold/15 font-semibold text-gold-soft'
+              : 'border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white'
+          }`}
+        >
+          Todos
+        </Link>
+        {allCategories.map((cat) => {
+          const active = categoria === cat.name
           return (
             <Link
-              key={label}
-              href={href}
+              key={cat.id}
+              href={`/admin/productos?categoria=${encodeURIComponent(cat.name)}`}
               aria-current={active ? 'page' : undefined}
               className={`${chipBase} ${
                 active
@@ -54,7 +69,12 @@ export default async function AdminProductosPage({ searchParams }) {
                   : 'border-white/10 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white'
               }`}
             >
-              {label}
+              {cat.name}
+              {!cat.is_active && (
+                <span className="ml-1.5 text-[9px] uppercase tracking-wider text-white/30">
+                  oculta
+                </span>
+              )}
             </Link>
           )
         })}

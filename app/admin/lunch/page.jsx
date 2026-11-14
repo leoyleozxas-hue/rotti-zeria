@@ -6,7 +6,7 @@ import ProductsTable from '@/components/admin/ProductsTable'
 
 export default async function LunchPage({ searchParams }) {
   const params = await searchParams
-  const tipo = params?.tipo || 'Lunch'
+  const tipo = params?.tipo === 'Evento' ? 'Evento' : 'Lunch'
 
   const supabase = await createClient()
   const { data: lunches } = await supabase
@@ -16,7 +16,6 @@ export default async function LunchPage({ searchParams }) {
     .eq('lunch_type', tipo)
     .order('created_at', { ascending: false })
 
-  // Contar ambos tipos para los badges
   const { count: lunchCount } = await supabase
     .from('products')
     .select('*', { count: 'exact', head: true })
@@ -34,6 +33,8 @@ export default async function LunchPage({ searchParams }) {
     { value: 'Evento', label: 'Eventos / Catering', icon: UtensilsCrossed, count: eventoCount || 0 },
   ]
 
+  const nuevoHref = `/admin/lunch/nuevo?tipo=${tipo}`
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -44,10 +45,11 @@ export default async function LunchPage({ searchParams }) {
           </p>
         </div>
         <Link
-          href="/admin/lunch/nuevo"
+          href={nuevoHref}
           className="flex items-center justify-center gap-2 bg-gold-soft text-chocolate px-5 py-2.5 rounded-full font-semibold hover:bg-white transition"
         >
-          <Plus size={18} /> Nuevo
+          <Plus size={18} />
+          {tipo === 'Evento' ? 'Nuevo evento' : 'Nuevo lunch'}
         </Link>
       </div>
 
@@ -81,24 +83,24 @@ export default async function LunchPage({ searchParams }) {
         })}
       </div>
 
-      {/* Aviso si está vacío */}
       {(!lunches || lunches.length === 0) && (
         <div className="rounded-card border border-dashed border-white/15 bg-white/[0.02] p-10 text-center">
           <p className="text-white/50 text-sm mb-4">
-            No hay {tipo === 'Evento' ? 'eventos / catering' : 'combos de lunch'} creados todavía.
+            {tipo === 'Evento'
+              ? 'Todavía no hay eventos / catering creados.'
+              : 'Todavía no hay combos de lunch creados.'}
           </p>
           <Link
-            href="/admin/lunch/nuevo"
+            href={nuevoHref}
             className="inline-flex items-center gap-2 bg-gold-soft text-chocolate px-5 py-2.5 rounded-full font-semibold hover:bg-white transition text-sm"
           >
-            <Plus size={16} /> Crear el primero
+            <Plus size={16} />
+            {tipo === 'Evento' ? 'Crear el primero' : 'Crear el primero'}
           </Link>
         </div>
       )}
 
-      {lunches && lunches.length > 0 && (
-        <ProductsTable products={lunches} />
-      )}
+      {lunches && lunches.length > 0 && <ProductsTable products={lunches} />}
     </div>
   )
 }

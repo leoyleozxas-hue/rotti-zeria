@@ -2,13 +2,16 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ProductForm from '@/components/admin/ProductForm'
+import { getCategoryNames } from '@/lib/categories'
 
-export default function NuevoProductoPage() {
+export default async function NuevoProductoPage() {
+  const categories = await getCategoryNames()
+
   return (
     <div className="space-y-6 text-[#F5EDE3]">
       <Link
         href="/admin/productos"
-        className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition"
+        className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
       >
         <ArrowLeft size={16} />
         Volver a productos
@@ -16,10 +19,12 @@ export default function NuevoProductoPage() {
 
       <div>
         <h1 className="font-serif text-3xl text-white">Nuevo producto</h1>
-        <p className="text-white/60 mt-1 text-sm">Cargá un producto para que aparezca en la tienda</p>
+        <p className="mt-1 text-sm text-white/60">
+          Cargá un producto para que aparezca en la tienda
+        </p>
       </div>
 
-      <ProductForm />
+      <ProductForm categories={categories} />
     </div>
   )
 }
