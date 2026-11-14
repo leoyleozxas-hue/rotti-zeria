@@ -19,6 +19,7 @@ import ProductCard from '@/components/ProductCard'
 import ProductSearch from '@/components/ProductSearch'
 import ProductsSidebar from '@/components/ProductsSidebar'
 import { SITE_CONFIG } from '@/lib/config'
+import { buildMetadata } from '@/lib/metadata'
 
 const PAGE_SIZE = 12
 const PREVIEW_COUNT = 3
@@ -32,6 +33,30 @@ const CATEGORIES = [
   { value: 'Bocados calientes', label: 'Bocados', icon: Flame, note: 'Chipá, prepizzas y calentitos.' },
   { value: 'Lunch', label: 'Lunch', icon: Briefcase, note: 'Bandejas y combos para reuniones.' },
 ]
+
+export async function generateMetadata({ searchParams }) {
+  const params = await searchParams
+  const categoria = params?.categoria
+  const q = params?.q
+
+  // Si hay búsqueda → no indexar (contenido efímero)
+  if (q) {
+    return buildMetadata({
+      title: 'Resultados de búsqueda',
+      description: `Resultados para "${q}" en el catálogo.`,
+      path: `/productos?q=${encodeURIComponent(q)}`,
+      noIndex: true,
+    })
+  }
+
+  return buildMetadata({
+    title: categoria ? `${categoria}` : 'Catálogo',
+    description: categoria
+      ? `Todos nuestros productos de ${categoria}.`
+      : 'Explorá el catálogo completo: panes, facturas, dulces, salados y bocados calientes.',
+    path: categoria ? `/productos?categoria=${encodeURIComponent(categoria)}` : '/productos',
+  })
+}
 
 function buildUrl({ categoria, page, q }) {
   const params = new URLSearchParams()

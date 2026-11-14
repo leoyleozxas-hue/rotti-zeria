@@ -8,6 +8,13 @@ import MarqueeBanner from '@/components/MarqueeBanner'
 import InfoBar from '@/components/InfoBar'
 import { ArrowRight, Wheat } from 'lucide-react'
 import { SITE_CONFIG } from '@/lib/config'
+import { buildMetadata } from '@/lib/metadata'
+
+export const metadata = buildMetadata({
+  title: 'Panadería artesanal',
+  description: `Facturas, panes y delicias recién horneadas. Pedí online en ${SITE_CONFIG.businessName} y retirá por el local.`,
+  path: '/',
+})
 
 async function FeaturedProducts() {
   const supabase = await createClient()

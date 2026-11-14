@@ -51,6 +51,12 @@ export async function proxy(request) {
     }
   }
 
+  // Header defensivo: bloquea indexación de todo /admin aunque robots.txt
+  // sea ignorado por el crawler (Google respeta X-Robots-Tag).
+  if (isAdminRoute) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  }
+
   return response
 }
 

@@ -5,20 +5,19 @@ import { notFound } from 'next/navigation'
 import { ChevronRight, Clock, Wheat } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { SITE_CONFIG } from '@/lib/config'
+import { buildMetadata } from '@/lib/metadata'
 import AddToCartSection from '@/components/AddToCartSection'
 import ProductCard from '@/components/ProductCard'
 import ProductGallery from '@/components/ProductGallery'
 import ShareButtons from '@/components/ShareButtons'
 
-// ── Función cacheada: si dos componentes la llaman en el mismo request,
-//    solo se ejecuta la query UNA vez ──
 const getProduct = cache(async (id) => {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('products')
     .select('*')
     .eq('id', id)
-    .eq('is_available', true) 
+    .eq('is_available', true)
     .single()
 
   if (error || !data) return null
@@ -29,7 +28,6 @@ async function ProductInfo({ id }) {
   const product = await getProduct(id)
   if (!product) notFound()
 
-  // Descripción: 1er bloque = párrafo, resto = ítems de la lista
   const rawLines = (product.description || '')
     .split('\n')
     .map((l) => l.trim())
@@ -44,7 +42,6 @@ async function ProductInfo({ id }) {
   return (
     <div className="bg-cream">
       <div className="mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6 lg:pb-28 lg:pt-12">
-        {/* Ruta */}
         <nav
           aria-label="Ruta"
           className="mb-8 flex items-center gap-2 text-caption text-stone lg:mb-12"
@@ -62,7 +59,6 @@ async function ProductInfo({ id }) {
         </nav>
 
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
-          {/* Imagen: sticky en desktop */}
           <div className="lg:col-span-6 lg:self-start">
             <div className="lg:sticky lg:top-28">
               <div className="relative aspect-square overflow-hidden bg-beige shadow-lifted lg:aspect-[4/5]">
@@ -71,7 +67,6 @@ async function ProductInfo({ id }) {
             </div>
           </div>
 
-          {/* Ficha */}
           <div className="flex flex-col lg:col-span-6 lg:pt-4">
             <span className="mb-4 text-caption text-stone">{product.category}</span>
 
@@ -184,17 +179,28 @@ export async function generateMetadata({ params }) {
   const { id } = await params
   const product = await getProduct(id)
 
-  if (!product) return { title: 'Producto no encontrado' }
-
-  return {
-    title: product.name,
-    description: product.description,
+  if (!product) {
+    return buildMetadata({
+      title: 'Producto no encontrado',
+      path: `/productos/${id}`,
+      noIndex: true,
+    })
   }
+
+  return buildMetadata({
+    title: product.name,
+    description:
+      product.description?.split('\n')[0]?.trim() ||
+      `${product.name} en ${SITE_CONFIG.businessName}. Pedí online y retirá por el local.`,
+    path: `/productos/${id}`,
+    image: product.image_url,
+    type: 'article',
+  })
 }
 
 export default async function ProductDetailPage({ params }) {
   const { id } = await params
-  const product = await getProduct(id) // usa el cache, no repite query
+  const product = await getProduct(id)
 
   return (
     <main>

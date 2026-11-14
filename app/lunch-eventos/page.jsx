@@ -6,6 +6,13 @@ import { getSettings } from '@/lib/settings'
 import { ArrowRight, Mail, Phone } from 'lucide-react'
 import LunchGrid from '@/components/LunchGrid'
 import ServiciosCarousel from '@/components/ServiciosCarousel'
+import { buildMetadata } from '@/lib/metadata'
+
+export const metadata = buildMetadata({
+  title: 'Lunch & Eventos',
+  description: 'Coffee breaks, catering, cumpleaños y eventos. Armamos combos a medida para oficinas y celebraciones.',
+  path: '/lunch-eventos',
+})
 
 const woodSticky = {
   backgroundImage:

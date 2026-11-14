@@ -2,12 +2,13 @@
 import Link from 'next/link'
 import { PackageSearch } from 'lucide-react'
 import OrderStatusLookup from '@/components/OrderStatusLookup'
-import { SITE_CONFIG } from '@/lib/config'
+import { buildMetadata } from '@/lib/metadata'
 
-export const metadata = {
-  title: `Seguimiento de pedido · ${SITE_CONFIG.businessName}`,
+export const metadata = buildMetadata({
+  title: 'Seguimiento de pedido',
   description: 'Consultá el estado de tu pedido con el número y el teléfono.',
-}
+  path: '/pedido',
+})
 
 export default function PedidoPage() {
   return (
